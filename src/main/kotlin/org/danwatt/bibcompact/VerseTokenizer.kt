@@ -1,4 +1,4 @@
-package org.danwatt
+package org.danwatt.bibcompact
 
 import java.util.*
 

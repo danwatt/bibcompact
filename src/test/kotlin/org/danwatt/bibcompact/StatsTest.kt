@@ -1,4 +1,4 @@
-package org.danwatt
+package org.danwatt.bibcompact
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
@@ -51,11 +51,20 @@ class StatsTest {
 
         over1000.map { (k, v) -> v to k }.sortedByDescending { it.first }.forEach { println(it) }
 
-        val sortedBySize = over1000.toList().sortedByDescending { it.second }
-        assertThat(sortedBySize.take(3)).containsSequence(
+        val sortedBySize = counts.toList().sortedByDescending { it.second }
+        val top = sortedBySize.take(500)
+        assertThat(top).containsSequence(
             "," to 70574,
             "the" to 62058,
             "and" to 38842
         )
+        top.forEachIndexed { index, pair ->
+            println("${pair.first}\t${pair.second}")
+        }
+
+        val bytesNeeded = tokenized.map { verse ->
+            (verse.tokens.size+8-1) / 8
+        }.sum()
+        println("${bytesNeeded} bytes are needed for bit mapping")
     }
 }

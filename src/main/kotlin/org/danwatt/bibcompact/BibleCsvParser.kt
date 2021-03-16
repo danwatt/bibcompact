@@ -1,4 +1,4 @@
-package org.danwatt
+package org.danwatt.bibcompact
 
 import java.nio.charset.Charset
 

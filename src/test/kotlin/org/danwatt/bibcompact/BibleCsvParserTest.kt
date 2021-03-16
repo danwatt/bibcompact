@@ -1,6 +1,7 @@
-package org.danwatt
+package org.danwatt.bibcompact
 
 import org.assertj.core.api.Assertions.assertThat
+import org.danwatt.bibcompact.BibleCsvParser
 import org.junit.Test
 
 class BibleCsvParserTest {
