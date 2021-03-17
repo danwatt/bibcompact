@@ -32,5 +32,10 @@ class LexiconTest {
         assertThat(d.getTokens().map { it.token }).containsSequence("Test", "else", "something", "value")
         assertThat(d.getTokens()[0].firstVerse).isEqualTo(0)
         assertThat(d.getTokens()[0].lastVerse).isEqualTo(2)
+
+        assertThat(d.offset("Test")).isEqualTo(0)
+        assertThat(d.offset("else")).isEqualTo(1)
+        assertThat(d.offset("something")).isEqualTo(2)
+        assertThat(d.offset("value")).isEqualTo(3)
     }
 }

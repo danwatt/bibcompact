@@ -8,11 +8,11 @@ Proposed
 
 ## Context
 
-* Start simple
+* Build on Approach 1
 
 ## Decision
 
-Develop a simple binary format:
+* Add support for stop words
 
 ### Dictionary
 

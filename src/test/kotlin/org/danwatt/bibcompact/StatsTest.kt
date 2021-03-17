@@ -42,8 +42,8 @@ class StatsTest {
     @Test
     fun tokenStats() {
         val allTokens = tokenized.flatMap { it.tokens }.toList()
-        assertThat(allTokens).hasSize(916847)
-        assertThat(allTokens.distinct()).hasSize(13683)
+        assertThat(allTokens).hasSize(917089)
+        assertThat(allTokens.distinct()).hasSize(13600)
 
         val counts = allTokens.groupingBy { it }.eachCount()
         val over1000: Map<String, Int> = counts.filterValues { it > 1000 }
@@ -55,8 +55,8 @@ class StatsTest {
         val top = sortedBySize.take(500)
         assertThat(top).containsSequence(
             "," to 70574,
-            "the" to 62058,
-            "and" to 38842
+            "the" to 62064,
+            "and" to 38847
         )
         top.forEachIndexed { index, pair ->
             println("${pair.first}\t${pair.second}")

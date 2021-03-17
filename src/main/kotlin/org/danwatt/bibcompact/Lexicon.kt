@@ -27,6 +27,10 @@ class Lexicon {
         return this.tokens
     }
 
+    fun offset(token: String): Int? {
+        return lookup[token]
+    }
+
     companion object {
         fun build(tokenized: List<TokenizedVerse>): Lexicon {
             val entries = mutableMapOf<String, LexiconEntry>()
