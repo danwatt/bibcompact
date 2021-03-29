@@ -3,6 +3,8 @@ package org.danwatt.bibcompact
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 
 class ByteUtilsKtTest {
 
@@ -46,5 +48,12 @@ class ByteUtilsKtTest {
         assertThat(8192.toVarByte()).containsExactly(0b1000_0000.toByte(), 0b0100_0000)
         assertThat(16384.toVarByte()).containsExactly(0b1000_0000.toByte(), 0b1000_0000.toByte())
         assertThat(32767.toVarByte()).containsExactly(0b1111_1111.toByte(), 0b1111_1111.toByte())
+    }
+
+    @Test
+    fun readVarByte() {
+        assertThat(ByteArrayInputStream(64.toVarByte().toByteArray()).readVarByteInt()).isEqualTo(64)
+        assertThat(ByteArrayInputStream(128.toVarByte().toByteArray()).readVarByteInt()).isEqualTo(128)
+        assertThat(ByteArrayInputStream(32767.toVarByte().toByteArray()).readVarByteInt()).isEqualTo(32767)
     }
 }

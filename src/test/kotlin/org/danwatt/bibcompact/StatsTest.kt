@@ -4,9 +4,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 
 class StatsTest {
-    val verses = BibleCsvParser().readTranslation("kjv")
-    val t = VerseTokenizer()
-    val tokenized = verses.map { t.tokenize(it) }
+    private val verses = BibleCsvParser().readTranslation("kjv")
+    private val t = VerseTokenizer()
+    private val tokenized = verses.map { t.tokenize(it) }
 
     @Test
     fun `book chapter verse counts`() {
@@ -17,6 +17,39 @@ class StatsTest {
         assertThat(books).isEqualTo(66)
         assertThat(chapter).isEqualTo(1189)
         assertThat(verse).isEqualTo(31103)
+    }
+
+    @Test
+    fun firstWords() {
+        //Count how many words appear capitalized,
+        //then compare how many of them are only capitalized at the start of a sentence.
+        val wordsFollowingPunctuation = mutableListOf<String>()
+        val wordsNotFollowingPunctuation = mutableListOf<String>()
+        val punctuation = setOf("?", "!", ".")
+        tokenized.forEach { verse ->
+            var followingPunctuation = true
+            verse.tokens.forEach { token ->
+                followingPunctuation = if (punctuation.contains(token)) {
+                    true
+                } else {
+                    if (followingPunctuation) {
+                        if (token.toLowerCase() == token) {
+                            println("Word $token is after punctuation yet is lower case, in verse: ${verse.id}")
+                        }
+                        wordsFollowingPunctuation.add(token)
+                    } else {
+                        wordsNotFollowingPunctuation.add(token)
+                    }
+                    false
+                }
+            }
+        }
+        val top =
+            wordsFollowingPunctuation.groupingBy { it }.eachCount().toList().sortedByDescending { it.second }
+
+        top.forEach { (k,count) -> println("$k: $count") }
+
+
     }
 
     @Test
@@ -63,8 +96,8 @@ class StatsTest {
         }
 
         val bytesNeeded = tokenized.map { verse ->
-            (verse.tokens.size+8-1) / 8
+            (verse.tokens.size + 8 - 1) / 8
         }.sum()
-        println("${bytesNeeded} bytes are needed for bit mapping")
+        println("$bytesNeeded bytes are needed for bit mapping")
     }
 }

@@ -13,15 +13,10 @@ data class LexiconEntry(
     }
 }
 
-class Lexicon {
+class Lexicon(private val tokens: List<LexiconEntry>) {
 
-    private var lookup: Map<String, Int>
-    private val tokens: List<LexiconEntry>
-
-    constructor(tokens: List<LexiconEntry>) {
-        this.lookup = tokens.mapIndexed { index, lexiconEntry -> lexiconEntry.token to index }.toMap()
-        this.tokens = tokens
-    }
+    private var lookup: Map<String, Int> =
+        tokens.mapIndexed { index, lexiconEntry -> lexiconEntry.token to index }.toMap()
 
     fun getTokens(): List<LexiconEntry> {
         return this.tokens
@@ -41,7 +36,7 @@ class Lexicon {
                 }
             }
             val sorted =
-                entries.values.sortedWith(compareByDescending <LexiconEntry> { it.totalOccurrences }.thenBy { it.token })
+                entries.values.sortedWith(compareByDescending<LexiconEntry> { it.totalOccurrences }.thenBy { it.token })
             return Lexicon(sorted)
         }
     }

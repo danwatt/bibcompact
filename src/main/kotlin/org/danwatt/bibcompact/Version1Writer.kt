@@ -9,11 +9,16 @@ class Version1Writer {
     fun write(verses: List<Verse>, out: OutputStream): Map<String, Int> {
         val tokenizer = VerseTokenizer()
         val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
+
+        out.write(1)
+        val headerByteArray = writeHeader(verses)
+        out.write(headerByteArray)
+
         val lexicon = Lexicon.build(tokenized)
         val lexBytes = write(lexicon)
         out.write(lexBytes)
 
-        var textByteCount = 0;
+        var textByteCount = 0
         tokenized.forEach {
             val verseBytes = write(it, lexicon)
             textByteCount += verseBytes.size
@@ -22,10 +27,34 @@ class Version1Writer {
         out.flush()
 
         return mapOf(
+            "headerBytes" to headerByteArray.size,
             "lexiconBytes" to lexBytes.size,
             "textBytes" to textByteCount,
             "tokens" to lexicon.getTokens().size
         )
+    }
+
+    fun writeHeader(verses: List<Verse>): ByteArray {
+        val headerBytes = mutableListOf<Byte>()
+        val books = verses.map { it.book }.distinct()
+        val numBooks = books.size
+        // 1 byte (B) : the number of books
+        headerBytes.add(numBooks.toByte())
+        // B bytes (C) : the number of chapters in each book
+        val verseCounts = mutableListOf<Byte>()
+        books.forEach { bookNumber ->
+            val chaps = verses.filter { it.book == bookNumber }.map { it.chapter }.distinct()
+            headerBytes.add(chaps.size.toByte())
+            chaps.forEach { chapterNumber ->
+                val numVerses = verses.filter { it.book == bookNumber && it.chapter == chapterNumber }.size.toByte()
+                verseCounts.add(numVerses)
+            }
+        }
+
+        verseCounts.forEach { vc ->
+            headerBytes.add(vc)
+        }
+        return headerBytes.toByteArray()
     }
 
     fun write(lexicon: Lexicon): ByteArray {
@@ -53,14 +82,8 @@ class Version1Writer {
 
         verse.tokens.forEach { token ->
             val position = lexicon.offset(token)
-            position ?: throw IllegalArgumentException("Uknown token ${token}")
+            position ?: throw IllegalArgumentException("Unknown token $token")
             val tokenBytes = position.toVarByte()
-            /*if (tokenBytes.size == 1) {
-                singleCounter[tokenBytes[0].toInt()]++
-                singleByteCount++
-            } else {
-                doubleByteCount++
-            }*/
             bytes.addAll(tokenBytes)
         }
         return bytes.toByteArray()
