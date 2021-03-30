@@ -2,6 +2,8 @@ package org.danwatt.bibcompact
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import java.io.FileWriter
+import java.io.PrintWriter
 
 class StatsTest {
     private val verses = BibleCsvParser().readTranslation("kjv")
@@ -17,6 +19,31 @@ class StatsTest {
         assertThat(books).isEqualTo(66)
         assertThat(chapter).isEqualTo(1189)
         assertThat(verse).isEqualTo(31103)
+    }
+
+    @Test
+    fun dumpForSQL() {
+        val out = PrintWriter(FileWriter("/tmp/verses.csv"))
+        //out.println("Book|Chapter|Verse|Token|ChapterOffset|VerseOffset")
+        var previousVerse: TokenizedVerse? = null
+        var chapterOffset = 0
+        tokenized.forEach { verse ->
+            if (previousVerse == null || (previousVerse!!.book != verse.verse && previousVerse!!.chapter != verse.chapter && verse.verse == 1)) {
+                chapterOffset = 0
+            }
+            previousVerse = verse
+            verse.tokens.forEachIndexed { verseOffset, token ->
+                val type = when {
+                    token.matches(Regex("^\\w+$")) -> 1
+                    else -> 0
+                }
+                out.println(verse.book.toString() + "|" + verse.chapter + "|" + verse.verse + "|" + token + "|" + type + "|" + chapterOffset + "|" + verseOffset)
+                chapterOffset++
+            }
+
+        }
+        out.close()
+
     }
 
     @Test
@@ -47,7 +74,7 @@ class StatsTest {
         val top =
             wordsFollowingPunctuation.groupingBy { it }.eachCount().toList().sortedByDescending { it.second }
 
-        top.forEach { (k,count) -> println("$k: $count") }
+        top.forEach { (k, count) -> println("$k: $count") }
 
 
     }
@@ -77,6 +104,7 @@ class StatsTest {
         val allTokens = tokenized.flatMap { it.tokens }.toList()
         assertThat(allTokens).hasSize(917089)
         assertThat(allTokens.distinct()).hasSize(13600)
+        assertThat(allTokens.map { it.toLowerCase() }.distinct()).hasSize(12616)
 
         val counts = allTokens.groupingBy { it }.eachCount()
         val over1000: Map<String, Int> = counts.filterValues { it > 1000 }

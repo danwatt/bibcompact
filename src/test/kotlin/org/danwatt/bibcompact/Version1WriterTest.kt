@@ -1,5 +1,6 @@
 package org.danwatt.bibcompact
 
+import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import java.io.ByteArrayOutputStream
@@ -25,18 +26,16 @@ class Version1WriterTest {
         val writer = Version1Writer()
         val verse = TokenizedVerse(1, 1, 1, 1, listOf("First", "Second", "2", "3", "rare", "rare-er", "rare-est"))
         val bytes = writer.write(verse, lexicon)
-        assertThat(bytes).containsExactly(
-            0b0000_0111.toByte(),//Header : 7 tokens
-            0b0000_0000.toByte(),//"First", offset 0
-            0b0000_0001.toByte(),//"Second", offset 1
-            0b0000_0010.toByte(),//"2", offset 2
-            0b0000_0011.toByte(),//"3", offset 3
-            0b1000_0000.toByte(), 0b00000001.toByte(),//"rare", offset 128
-            0b1000_0001.toByte(), 0b00000001.toByte(),//"rare-er", offset 129
-            0b1000_0010.toByte(), 0b00000001.toByte()//"rare-est", offset 130
+        assertThat(bytes.toHex()).isEqualTo(
+            "07" +//7 tokens
+                    "00" +//"First", offset 0
+                    "01" +//"Second", offset 1
+                    "02" +//"2", offset 2
+                    "03" +//"3", offset 3
+                    "8001" +//"rare", offset 128
+                    "8101" +//"rare-er", offset 129
+                    "8201" //"rare-est", offset 130
         )
-        assertThat(bytes.toHex()).isEqualTo("07|00|01|02|03|8001|8101|8201".replace("|", ""))
-        //07 00 01 02 03 8001 8101 8201
     }
 
     @Test
@@ -115,7 +114,7 @@ class Version1WriterTest {
 
         assertThat(baos.toByteArray().toHex()).isEqualTo(
             "01" + //Version number
-            "020201030102" +//Header
+                    "020201030102" +//Header
                     "00063100426f6f6b00436861707465720056657273650032003300" +//Lexicon
                     "060100020003000601000200030406010002000305060100020403000601040200030006010402000304"//Tokens
         )
@@ -133,11 +132,25 @@ class Version1WriterTest {
             .containsEntry("lexiconBytes", 109035)
             .containsEntry("textBytes", 1236508)
             .containsEntry("tokens", 13600)
-        assertThat(baos.toByteArray()).hasSize(1346800)
+        val rawByte = baos.toByteArray()
+        assertThat(rawByte).hasSize(1346800)
 
         val fw = FileOutputStream("/tmp/kjv.out")
-        fw.write(baos.toByteArray())
+        fw.write(rawByte)
         fw.close()
+
+        val xzBytes = xzCompress(rawByte)
+        assertThat(xzBytes).hasSize(819652)
+
+    }
+
+    private fun xzCompress(rawByte: ByteArray): ByteArray {
+        val xzByteOut = ByteArrayOutputStream()
+        val xzOut = XZCompressorOutputStream(xzByteOut, 9)
+        xzOut.write(rawByte)
+        xzOut.finish()
+        xzOut.close()
+        return xzByteOut.toByteArray()
     }
 }
 
