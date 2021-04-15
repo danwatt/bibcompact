@@ -1,4 +1,4 @@
-# 2. Approach 2
+# 2. Approach 1
 
 Date: 2021-03-15
 
@@ -8,194 +8,112 @@ Proposed
 
 ## Context
 
-* Build on Approach 1
+* Buildd on approach 1
 
 ## Decision
 
-* Add support for stop words
 
-### Dictionary
+### Header
+* 1 byte `V` : Version number. Fixed at `0x01`
+* 1 byte, `B` : number of books
+* `B` bytes : one byte for each book, to indicate how many chapters are in that book. Total of these values is `C`
+* `C` bytes : one byte for each chapter, to indicate how many verses there are in that chapter. (the longest is Ps 119
+  at 176 verses)
 
-* 2 bytes: an integer indicating how many terms are in the dictionary
-* An array of `NULL` (or newline) terminated strings composed of case-sensitive, US-ASCII characters,
-    sorted by number of occurrences in the text in descending order
+In the KJV, this header should have a total of 1 + 1 + 66 + 1189 = 1257 bytes
 
-### Verses
-* Store indexes into the dictionary in a variable (1-2 byte) format
-  * If the first byte has a high bit of 0, then the remaining 7 bits
-    are used to address positions 0-127 in the dictionary
-  * If the first byte has a high bit of 1, then use the current byte
-    and next byte for a total of 15 bits of address space (32k values).
-    This will work for the KVJ which has `13683` distinct tokens.
+### Lexicon
+
+Introduce the concept of a stop-word. At least for the KJV, we are going to use a fixed array of stop-words
+that are case-sensitive for the time being. This list will be handcrafted, but based on
+https://gist.github.com/sebleier/554280 with some changes to account for KVJ-isms.
+
+The Lexicon will be split into two lists - the stop word list, and the significant word list.
+
+* 1 byte `S`: an integer indicating how many terms are in the stop word list
+* 2 bytes `L`: an integer indicating how many terms are in the significant word list
+* An array of `S` elements with `NULL` terminated single-byte, case-sensitive ASCII strings from the stop-word list
+* An array of `L` elements of `NULL` terminated single-byte, case-sensitive ASCII strings, sorted by:
+    * number of occurrences in the text in descending order
+    * then by alphabetical order
+
+### Text File
+
+The text file now will be separated by book, and then further into three streams:
+
+1. A bit array indicating if the word in this position is in the skip stream or significant stream
+2. A stream of single byte integer lookups into the stop word list
+3. A stream of variable byte (1-2) integer lookups into the significant word list
+
+For example, if we have the following sentence:
+
+> This is a test of split streams.
+
+We have 8 tokens:
+| Token | Type | Index |
+| ----- | ---- | ----- |
+| This  | stop          | 10 |
+| is    | stop          | 5  |
+| a     | stop          | 0  |
+| test  | significant   | 20 |
+| of    | stop          | 3  |
+| split | significant   | 50 |
+| streams | significant | 59 |
+| .     | stop          | 1  |
+
+* Stream 1: `00010110` (or `0x16`)
+* Stream 2: `0x0A 05 00 03 01`
+* Stream 3: `0x14 32 3b`
+
+This actually introduces one extra byte of overhead for our sample sentence. We can compensate for this later on
+when we introduce a low-overhead compressor to the stream.
 
 ## Consequences
 
 * Likely will not make it under the 1MB goal
 * No features to directly support "fast" indexing
 
+## Results
 
-## Random musings
+* Lexicon data: 109,035
+* Text file: 1,236,508
+    * 628,773 single byte tokens
+    * 288,316 double byte tokens
+* Raw file: 1,345,543 bytes
 
-The patent refers to two, maybe three files existing:
+| Compression | Size | v | ----------- | -----| | `zpaq -m5`  | 736,310 | | `xz -9`     | 818,884 | | `bzip2 -9`  |
+858,365 | | `zip -9`    | 911,950 | | `gzip -9`   | 912,105 |  
+| Uncompressed | 1,345,543 |
 
-* One that is compacted uses the skipping method, containing usable/searchable tokens
-* One that directly encodes stop words/tokens
-* Maybe one that has a bitmap of which file has which token
+* `zpaq -m5` comes in at about 3kb smaller than compressing the raw KJV (`739,407`)
+* `bzip2 -9` is much improved, vs `993,406`
+* `xz -9` is hugely improved as well, vs `1,048,616`
 
-It is possible thaat the stop wordds can be encoded in 4-6 bits (giving us 15, 31 or 63 stop words),
-so file number two could be smaller than 8 bits/token
+## Possible simple improvements
 
-The compacted file likely uses a variable byte encoding, using 1-2 bytes
-per token.
+### Lexicon file
 
-The bitmap file would likely need one bit per token. If the KJV has 916847 total tokens,
-this means we could need at a minimum 916847/8 = 114,605 bytes, or over 1/10th of our
-storage space, to store a 0 (compact) or 1 (stop word) switch bit.
+* Don't use `0x00` to terminate each string
+    * Since we are dealing with US-ASCII only (which falls in the range of 32-126), we could set the high bit in the
+      final character to `1` to indicate it is the last letter of a token. This could save about 13,600 bytes.
+    * However, this would come at the expense of supporting other languages, most notably Spanish.
+* Add some sorting by length, and prefix a group of tokens with the expected length
+    * Ie: `0x01` followed by `0x41 (A) 0x61 (a) 0x49 (I) 0x4F (O)`, or `0x02` followed by `0x616E (an) 0x6F66 (of)`, etc
+    * This would only work if all tokens were shorter than 32 bytes, unless we reserved one value to indicate a longer
+      length, and would just add to the decoding complexity. Overall savings would be ~10,000 bytes
+* Apply Huffman encoding to the Lexicon
+    * Approximately 644 bits of overhead, and reduced the overall size to about 59kb (about 50kb of savings), using a
+      simple JS test (http://craftyspace.net/huffman/)
 
-| Number | Token | Stop? | Count |
-| ------ | ----- | ----- | ----- |
-|1|,|Y|70574|
-|2|the|Y|62058|
-|3|and|Y|38842|
-|4|of|Y|34426|
-|5|.|Y|26201|
-|6|to|Y|13378|
-|7|And|Y|12840|
-|8|:|Y|12698|
-|9|that|Y|12573|
-|10|in|Y|12330|
-|11|;|Y|10139|
-|12|shall|?|9760|
-|13|he| |9658|
-|14|unto| |8940|
-|15|I| |8847|
-|16|his| |8385|
-|17|a|Y|7942|
-|18|for|Y|7180|
-|19|they| |6967|
-|20|be|Y|6877|
-|21|is|Y|6831|
-|22|him| |6649|
-|23|LORD| |6646|
-|24|not|Y|6550|
-|25|them| |6425|
-|26|with| |5961|
-|27|it|Y|5891|
-|28|all|Y|5426|
-|29|thou| |4889|
-|30|was| |4515|
-|31|thy| |4450|
-|32|which| |4277|
-|33|my| |4135|
-|34|God|N|4111|
-|35|me| |4092|
-|36|said|Y|3994|
-|37|their| |3878|
-|38|have| |3843|
-|39|thee| |3826|
-|40|will| |3807|
-|41|ye| |3698|
-|42|from| |3578|
-|43|?|Y|3297|
-|44|as|Y|3256|
-|45|are|Y|2912|
-|46|were|Y|2767|
-|47|out| |2750|
-|48|upon| |2730|
-|49|man| |2720|
-|50|you| |2612|
-|51|Israel| |2574|
-|52|by|Y|2539|
-|53|when| |2484|
-|54|king| |2465|
-|55|thisY |2453|
-|56|but|Y|2427|
-|57|up|Y|2372|
-|58|hath| |2239|
-|59|people| |2143|
-|60|son| |2107|
-|61|came| |2091|
-|62|there| |2086|
-|63|had|Y|2025|
-|64|house| |2023|
-|65|into| |2014|
-|66|'|Y|2010|
-|67|her| |1977|
-|68|on| |1968|
-|69|come| |1849|
-|70|one| |1847|
-|71|The| |1840|
-|72|children| |1816|
-|73|s| |1783|
-|74|before| |1775|
-|75|your| |1761|
-|76|day| |1740|
-|77|land| |1718|
-|78|For|Y|1709|
-|79|an|Y|1673|
-|80|also| |1665|
-|81|men| |1658|
-|82|against| |1657|
-|83|we| |1643|
-|84|shalt| |1613|
-|85|But| |1556|
-|86|at|Y|1507|
-|87|hand| |1466|
-|88|us| |1447|
-|89|made| |1405|
-|90|went| |1399|
-|91|saying| |1390|
-|92|Then| |1373|
-|93|no|Y|1343|
-|94|do|Y|1301|
-|95|even| |1297|
-|96|saith| |1262|
-|97|go| |1257|
-|98|every| |1178|
-|99|things| |1162|
-|100|our| |1136|
+### Text file
 
-So if we limited ourselves to 4 bits for stop words, or 16 total:
-
-1. ,
-2. the
-3. and
-4. of
-5. .
-6. to
-7. And
-8. :
-9. that
-10. in
-11. ;
-12. a
-13. for
-14. be
-15. is
-16. not
-    (we may need to store a end-of-verse marker instead)
-
-That would be a total of 341,439 occurrences of stopwords. Meaning,
-we could store those in 170,720 bytes, plus the switch file at 114605 bytes,
-yielding 285,325 total bytes for the top 16 stopwords,
-which give us an overall savings of 56,114 bytes.
-
-However, for the switch file, we would have a 916847-bit long
-field to have to search for a given token. For a given verse,
-we do not know (with the information we have so far) where in that bit field
-a verse begins. It may make more sense to store this instead
-as a header inside the verse, which may mean there are a lot of bits
-that are unused.
-
-If we stored it as a per-verse header, we would need 128309 bytes, vs 114605.
-
-The longest verse is 104 tokens. So, we may want to store a flat array
-of verse lengths instead of using an end-of-verse marker.
-If we got really clever we could store this as 7 bits (128 values),
-but that might not work for other translations, so we should stick with
-8 bit bytes. In fact, we likely want to store a mapping of book to number of chapters,
-and chapter to number of verses.
-
-* 66 bytes to store how many chapters are in each book
-* 1189 bytes to store how many verses are in each chapter
-* 31103 bytes to store how many tokens are in each verse
+* The next thing to explore will be splitting the text file into two - one for stopwords, which can be encoded in 4
+  bits, and a master file, containing all other tokens
+    * Theoretically there are 628,773 single bytes in this version. 0-15 are used a total of `351,687` times. Now, at
+      the current version these are not all stopwords, so the total might be a little lower. But if we can cut that in
+      half, plus some overhead, that would be a savings of maybe 150kb. Combine that with 50kb of savings in the Lexicon
+      file, that gains us almost 200kb of savings, and gets us down to about 1.15mb
+    * Indexes 0-7 : 271035. 3-bit encoding: 101,638. Potential savings : 169,397
+    * Indexes 0-15: 351687. 4-bit encoding: 175,844. Potential savings : 175,843
+    * Indexes 0-31: 449227. 5-bit encoding: 280,766. Potential savings : 168,461
+    * Indexes 0-63: 543285. 6-bit encoding: 407,463. Potential savings : 135,822

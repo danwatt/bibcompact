@@ -5,6 +5,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
+import org.apache.commons.compress.compressors.CompressorStreamFactory
+import org.apache.commons.compress.compressors.CompressorStreamFactory.*
+
 
 class Version1WriterTest {
 
@@ -25,7 +28,7 @@ class Version1WriterTest {
 
         val writer = Version1Writer()
         val verse = TokenizedVerse(1, 1, 1, 1, listOf("First", "Second", "2", "3", "rare", "rare-er", "rare-est"))
-        val bytes = writer.write(verse, lexicon)
+        val bytes = writer.writeVerse(verse, lexicon)
         assertThat(bytes.toHex()).isEqualTo(
             "07" +//7 tokens
                     "00" +//"First", offset 0
@@ -48,7 +51,7 @@ class Version1WriterTest {
         )
 
         val dw = Version1Writer()
-        val bytes = dw.write(lex)
+        val bytes = dw.writeLexicon(lex)
 
         assertThat(bytes.toHex()).isEqualTo("0002546573740076616c756500")
 
@@ -138,19 +141,56 @@ class Version1WriterTest {
         val fw = FileOutputStream("/tmp/kjv.out")
         fw.write(rawByte)
         fw.close()
-
-        val xzBytes = xzCompress(rawByte)
-        assertThat(xzBytes).hasSize(819652)
-
     }
 
-    private fun xzCompress(rawByte: ByteArray): ByteArray {
-        val xzByteOut = ByteArrayOutputStream()
-        val xzOut = XZCompressorOutputStream(xzByteOut, 9)
-        xzOut.write(rawByte)
-        xzOut.finish()
-        xzOut.close()
-        return xzByteOut.toByteArray()
+    @Test
+    fun compressParts() {
+        val verses = BibleCsvParser().readTranslation("kjv")
+        val vw = Version1Writer()
+
+        val tokenizer = VerseTokenizer()
+        val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
+        val lexicon = Lexicon.build(tokenized)
+        val headerBytes = vw.writeHeader(verses)
+        val lexBytes = vw.writeLexicon(lexicon)
+
+        val baos = ByteArrayOutputStream()
+        vw.writeVerseData(tokenized, lexicon, baos)
+        baos.close()
+        val verseBytes = baos.toByteArray()
+
+
+        val algorithms = setOf(
+            GZIP,
+            XZ,
+            BZIP2,
+            DEFLATE,
+            LZMA
+        )
+
+        val compressionResults: Map<String, Pair<Int, Int>> = algorithms.map { algo ->
+            val lb = compress(algo, lexBytes)
+            val vb = compress(algo, verseBytes)
+
+            println("Compressing the header with $algo: ${compress(algo,headerBytes).size}")
+
+            Triple(algo, lb.size, vb.size)
+        }.associateBy { it.first }.mapValues { it.value.second to it.value.third }
+
+        assertThat(compressionResults).containsEntry(GZIP, 49739 to 861500)
+        assertThat(compressionResults).containsEntry(DEFLATE, 49727 to 861488)
+        assertThat(compressionResults).containsEntry(BZIP2, 45065 to 806230)
+        assertThat(compressionResults).containsEntry(XZ, 43856 to 774900)
+        assertThat(compressionResults).containsEntry(LZMA, 43786 to 774723)
+    }
+
+    private fun compress(algo: String, lexBytes: ByteArray): ByteArray {
+        val b = ByteArrayOutputStream()
+        val out = CompressorStreamFactory(true, 1000).createCompressorOutputStream(algo, b)
+        out.write(lexBytes)
+        out.flush()
+        out.close()
+        return b.toByteArray()
     }
 }
 

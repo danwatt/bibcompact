@@ -113,14 +113,14 @@ class StatsTest {
         over1000.map { (k, v) -> v to k }.sortedByDescending { it.first }.forEach { println(it) }
 
         val sortedBySize = counts.toList().sortedByDescending { it.second }
-        val top = sortedBySize.take(500)
+        val top = sortedBySize.take(256)
         assertThat(top).containsSequence(
             "," to 70574,
             "the" to 62064,
             "and" to 38847
         )
         top.forEachIndexed { index, pair ->
-            println("${pair.first}\t${pair.second}")
+            println("$index: ${pair.second}\t${pair.first}")
         }
 
         val bytesNeeded = tokenized.map { verse ->
