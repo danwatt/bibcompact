@@ -172,7 +172,7 @@ class Version1WriterTest {
             val lb = compress(algo, lexBytes)
             val vb = compress(algo, verseBytes)
 
-            println("Compressing the header with $algo: ${compress(algo,headerBytes).size}")
+            println("Compressing the header with $algo: ${compress(algo, headerBytes).size}")
 
             Triple(algo, lb.size, vb.size)
         }.associateBy { it.first }.mapValues { it.value.second to it.value.third }
@@ -182,6 +182,32 @@ class Version1WriterTest {
         assertThat(compressionResults).containsEntry(BZIP2, 45065 to 806230)
         assertThat(compressionResults).containsEntry(XZ, 43856 to 774900)
         assertThat(compressionResults).containsEntry(LZMA, 43786 to 774723)
+    }
+
+    @Test
+    fun lzmaTranslations() {
+        val translations = setOf("asv", "bbe", "kjv", "web", "ylt")
+        translations.forEach { trans ->
+            val verses = BibleCsvParser().readTranslation(trans)
+            val vw = Version1Writer()
+
+            val tokenizer = VerseTokenizer()
+            val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
+            val lexicon = Lexicon.build(tokenized)
+            val lexBytes = vw.writeLexicon(lexicon)
+
+            val baos = ByteArrayOutputStream()
+            vw.writeVerseData(tokenized, lexicon, baos)
+            baos.close()
+            val verseBytes = baos.toByteArray()
+
+            val lb = compress(LZMA, lexBytes)
+            val vb = compress(LZMA, verseBytes)
+
+            println("Translation $trans: lex: ${lb.size} verse: ${vb.size}")
+
+        }
+
     }
 
     private fun compress(algo: String, lexBytes: ByteArray): ByteArray {

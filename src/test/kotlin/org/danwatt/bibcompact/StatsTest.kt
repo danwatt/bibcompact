@@ -4,6 +4,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import java.io.FileWriter
 import java.io.PrintWriter
+import kotlin.math.ceil
+import kotlin.math.log2
 
 class StatsTest {
     private val verses = BibleCsvParser().readTranslation("kjv")
@@ -100,12 +102,23 @@ class StatsTest {
     }
 
     @Test
+    fun bitDistribution() {
+        val lex = Lexicon.build(tokenized)
+        val bitDistibution = tokenized.map { tv ->
+            val max = tv.tokens.mapNotNull { lex.offset(it) }.maxOrNull() ?: 0
+            val bits = ceil(log2(max.toFloat())).toInt()
+            bits
+        }.groupingBy { it }.eachCount()
+        bitDistibution.toSortedMap()
+            .forEach { (bits, count) -> println("Verses that can be represented using ${bits} bits : $count") }
+    }
+
+    @Test
     fun tokenStats() {
         val allTokens = tokenized.flatMap { it.tokens }.toList()
         assertThat(allTokens).hasSize(917089)
         assertThat(allTokens.distinct()).hasSize(13600)
         assertThat(allTokens.map { it.toLowerCase() }.distinct()).hasSize(12616)
-
         val counts = allTokens.groupingBy { it }.eachCount()
         val over1000: Map<String, Int> = counts.filterValues { it > 1000 }
         assertThat(over1000).hasSize(116)
@@ -113,7 +126,7 @@ class StatsTest {
         over1000.map { (k, v) -> v to k }.sortedByDescending { it.first }.forEach { println(it) }
 
         val sortedBySize = counts.toList().sortedByDescending { it.second }
-        val top = sortedBySize.take(256)
+        val top = sortedBySize.take(1024)
         assertThat(top).containsSequence(
             "," to 70574,
             "the" to 62064,
@@ -127,5 +140,22 @@ class StatsTest {
             (verse.tokens.size + 8 - 1) / 8
         }.sum()
         println("$bytesNeeded bytes are needed for bit mapping")
+    }
+
+    @Test
+    fun translationComparison() {
+        val translations = setOf("asv","bbe","kjv","web","ylt")
+        val stats = translations.map { trans ->
+            val verses = BibleCsvParser().readTranslation(trans)
+            val t = VerseTokenizer()
+            val tokenized = verses.map { t.tokenize(it) }
+            val allTokens = tokenized.flatMap { it.tokens }.toList()
+            val counts: Map<String, Int> = allTokens.groupingBy { it }.eachCount()
+            trans to (counts.size to allTokens.size)
+        }.toMap()
+
+        stats.forEach { trans, tokens ->
+            println("Translation $trans has ${tokens.first} distinct tokens, ${tokens.second} total")
+        }
     }
 }
