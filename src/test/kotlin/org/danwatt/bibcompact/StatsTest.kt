@@ -140,22 +140,27 @@ class StatsTest {
             (verse.tokens.size + 8 - 1) / 8
         }.sum()
         println("$bytesNeeded bytes are needed for bit mapping")
+
+
     }
 
     @Test
     fun translationComparison() {
-        val translations = setOf("asv","bbe","kjv","web","ylt")
+        val translations = setOf("asv", "bbe", "kjv", "web", "ylt")
         val stats = translations.map { trans ->
             val verses = BibleCsvParser().readTranslation(trans)
             val t = VerseTokenizer()
             val tokenized = verses.map { t.tokenize(it) }
             val allTokens = tokenized.flatMap { it.tokens }.toList()
             val counts: Map<String, Int> = allTokens.groupingBy { it }.eachCount()
-            trans to (counts.size to allTokens.size)
+            val caseInsensitive = tokenized.flatMap { it.tokens }.map { it.toUpperCase() }.toList()
+            val caseInsensitiveCount: Map<String, Int> = caseInsensitive.groupingBy { it }.eachCount()
+            val justOnce = counts.filterValues { it == 1 }.count()
+            trans to (listOf(counts.size, allTokens.size, justOnce, caseInsensitiveCount.size))
         }.toMap()
 
         stats.forEach { trans, tokens ->
-            println("Translation $trans has ${tokens.first} distinct tokens, ${tokens.second} total")
+            println("Translation $trans has ${tokens[0]} distinct tokens, ${tokens[1]} total, ${tokens[2]} just once, ${tokens[3]} case-insensitive")
         }
     }
 }
