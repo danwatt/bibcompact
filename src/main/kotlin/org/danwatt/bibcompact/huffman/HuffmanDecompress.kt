@@ -52,9 +52,8 @@ object HuffmanDecompress {
 
     // To allow unit testing, this method is package-private instead of private.
     @Throws(IOException::class)
-    fun decompress(code: CodeTree?, `in`: BitInputStream, out: OutputStream) {
-        val dec = HuffmanDecoder(`in`)
-        dec.codeTree = code
+    fun decompress(code: CodeTree, `in`: BitInputStream, out: OutputStream) {
+        val dec = HuffmanDecoder(`in`, code)
         while (true) {
             val symbol = dec.read()
             if (symbol == 256) // EOF symbol

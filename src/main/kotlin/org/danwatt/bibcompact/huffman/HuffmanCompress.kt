@@ -79,9 +79,8 @@ object HuffmanCompress {
 
     // To allow unit testing, this method is package-private instead of private.
     @Throws(IOException::class)
-    fun compress(code: CodeTree?, `in`: InputStream, out: BitOutputStream?) {
-        val enc = HuffmanEncoder(out!!)
-        enc.codeTree = code
+    fun compress(code: CodeTree, `in`: InputStream, out: BitOutputStream) {
+        val enc = HuffmanEncoder(out,code)
         while (true) {
             val b = `in`.read()
             if (b == -1) break

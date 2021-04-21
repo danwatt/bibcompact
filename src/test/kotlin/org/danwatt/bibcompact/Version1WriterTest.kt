@@ -172,7 +172,7 @@ class Version1WriterTest {
             val lb = compress(algo, lexBytes)
             val vb = compress(algo, verseBytes)
 
-            println("Compressing the header with $algo: ${compress(algo, headerBytes).size}")
+            println("Compressing the header with $algo: ${Companion.compress(algo, headerBytes).size}")
 
             Triple(algo, lb.size, vb.size)
         }.associateBy { it.first }.mapValues { it.value.second to it.value.third }
@@ -201,8 +201,8 @@ class Version1WriterTest {
             baos.close()
             val verseBytes = baos.toByteArray()
 
-            val lb = compress(LZMA, lexBytes)
-            val vb = compress(LZMA, verseBytes)
+            val lb = Companion.compress(LZMA, lexBytes)
+            val vb = Companion.compress(LZMA, verseBytes)
 
             println("Translation $trans: lex: ${lb.size} verse: ${vb.size}")
 
@@ -210,13 +210,15 @@ class Version1WriterTest {
 
     }
 
-    private fun compress(algo: String, lexBytes: ByteArray): ByteArray {
-        val b = ByteArrayOutputStream()
-        val out = CompressorStreamFactory(true, 1000).createCompressorOutputStream(algo, b)
-        out.write(lexBytes)
-        out.flush()
-        out.close()
-        return b.toByteArray()
+    companion object {
+        fun compress(algo: String, lexBytes: ByteArray): ByteArray {
+            val b = ByteArrayOutputStream()
+            val out = CompressorStreamFactory(true, 1000).createCompressorOutputStream(algo, b)
+            out.write(lexBytes)
+            out.flush()
+            out.close()
+            return b.toByteArray()
+        }
     }
 }
 

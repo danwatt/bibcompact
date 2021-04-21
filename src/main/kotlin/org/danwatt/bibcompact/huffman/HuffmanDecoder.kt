@@ -13,16 +13,9 @@ import java.util.*
  * Reads from a Huffman-coded bit stream and decodes symbols. Not thread-safe.
  * @see HuffmanEncoder
  */
-class HuffmanDecoder(val input: BitInputStream) {
+class HuffmanDecoder(val input: BitInputStream, var codeTree: CodeTree) {
 
 
-    /**
-     * The code tree to use in the next {@link#read()} operation. Must be given a non-`null`
-     * value before calling read(). The tree can be changed after each symbol decoded, as long
-     * as the encoder and decoder have the same tree at the same point in the code stream.
-     */
-    @JvmField
-    var codeTree: CodeTree? = null
     /*---- Method ----*/
     /**
      * Reads from the input stream to decode the next Huffman-coded symbol.
@@ -33,8 +26,7 @@ class HuffmanDecoder(val input: BitInputStream) {
      */
     @Throws(IOException::class)
     fun read(): Int {
-        if (codeTree == null) throw NullPointerException("Code tree is null")
-        var currentNode = codeTree!!.root
+        var currentNode = codeTree.root
         while (true) {
             val nextNode: Node = when (input.readNoEof()) {
                 0 -> currentNode.left

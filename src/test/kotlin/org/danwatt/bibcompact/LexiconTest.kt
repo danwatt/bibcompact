@@ -33,9 +33,9 @@ class LexiconTest {
         assertThat(d.getTokens()[0].firstVerse).isEqualTo(0)
         assertThat(d.getTokens()[0].lastVerse).isEqualTo(2)
 
-        assertThat(d.offset("Test")).isEqualTo(0)
-        assertThat(d.offset("else")).isEqualTo(1)
-        assertThat(d.offset("something")).isEqualTo(2)
-        assertThat(d.offset("value")).isEqualTo(3)
+        assertThat(d.getLookupValue("Test")).isEqualTo(0)
+        assertThat(d.getLookupValue("else")).isEqualTo(1)
+        assertThat(d.getLookupValue("something")).isEqualTo(2)
+        assertThat(d.getLookupValue("value")).isEqualTo(3)
     }
 }

@@ -6,7 +6,7 @@ data class LexiconEntry(
     var lastVerse: Int = firstVerse,
     var totalOccurrences: Int = 0
 ) {
-    fun addVerseInstance(verseIndex: Int, book: Int) {
+    fun addVerseInstance(verseIndex: Int) {
         totalOccurrences++
         if (verseIndex < firstVerse) firstVerse = verseIndex
         if (verseIndex > lastVerse) lastVerse = verseIndex
@@ -16,14 +16,14 @@ data class LexiconEntry(
 class Lexicon(private val tokens: List<LexiconEntry>) {
 
     private var lookup: Map<String, Int> =
-        tokens.mapIndexed { index, lexiconEntry -> lexiconEntry.token to index }.toMap()
+        tokens.mapIndexed { index, lexiconEntry -> lexiconEntry.token to index }
+            .toMap()
 
-    fun getTokens(): List<LexiconEntry> {
-        return this.tokens
-    }
+    fun getTokens(): List<LexiconEntry> = this.tokens
 
-    fun offset(token: String): Int? {
-        return lookup[token]
+    fun getLookupValue(token: String): Int? = lookup[token]
+    fun getFullTokenStats(token: String): LexiconEntry? {
+        return this.getTokens().firstOrNull() { it.token == token }
     }
 
     companion object {
@@ -32,11 +32,13 @@ class Lexicon(private val tokens: List<LexiconEntry>) {
             tokenized.forEachIndexed { idx, v ->
                 v.tokens.forEach { token ->
                     val t = entries.computeIfAbsent(token) { LexiconEntry(token, idx) }
-                    t.addVerseInstance(idx, v.book)
+                    t.addVerseInstance(idx)
                 }
             }
-            val sorted =
-                entries.values.sortedWith(compareByDescending<LexiconEntry> { it.totalOccurrences }.thenBy { it.token })
+            val sorted = entries.values.sortedWith(
+                compareByDescending<LexiconEntry> { it.totalOccurrences }
+                    .thenBy { it.token }
+            )
             return Lexicon(sorted)
         }
     }

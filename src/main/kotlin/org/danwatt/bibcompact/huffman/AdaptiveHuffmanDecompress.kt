@@ -37,8 +37,7 @@ object AdaptiveHuffmanDecompress {
         val initFreqs = IntArray(257)
         Arrays.fill(initFreqs, 1)
         var freqs = FrequencyTable(initFreqs)
-        val dec = HuffmanDecoder(input)
-        dec.codeTree = freqs.buildCodeTree() // Use same algorithm as the compressor
+        val dec = HuffmanDecoder(input, freqs.buildCodeTree())
         var count = 0 // Number of bytes written to the output file
         while (true) {
             // Decode and write one byte

@@ -17,15 +17,8 @@ import java.util.*
  * Encodes symbols and writes to a Huffman-coded bit stream. Not thread-safe.
  * @see HuffmanDecoder
  */
-class HuffmanEncoder(val out: BitOutputStream) {
+class HuffmanEncoder(val out: BitOutputStream, var codeTree: CodeTree) {
 
-    /**
-     * The code tree to use in the next {@link#write(int)} operation. Must be given a non-`null`
-     * value before calling write(). The tree can be changed after each symbol encoded, as long
-     * as the encoder and decoder have the same tree at the same point in the code stream.
-     */
-    @JvmField
-    var codeTree: CodeTree? = null
     /*---- Method ----*/
     /**
      * Encodes the specified symbol and writes to the Huffman-coded output stream.
@@ -35,8 +28,7 @@ class HuffmanEncoder(val out: BitOutputStream) {
      * @throws IllegalArgumentException if the symbol value is negative or has no binary code
      */
     fun write(symbol: Int) {
-        if (codeTree == null) throw NullPointerException("Code tree is null")
-        val bits = codeTree!!.getCode(symbol)
+        val bits = codeTree.getCode(symbol)
         for (b in bits) out.write(b)
     }
 }

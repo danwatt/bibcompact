@@ -105,7 +105,7 @@ class StatsTest {
     fun bitDistribution() {
         val lex = Lexicon.build(tokenized)
         val bitDistibution = tokenized.map { tv ->
-            val max = tv.tokens.mapNotNull { lex.offset(it) }.maxOrNull() ?: 0
+            val max = tv.tokens.mapNotNull { lex.getLookupValue(it) }.maxOrNull() ?: 0
             val bits = ceil(log2(max.toFloat())).toInt()
             bits
         }.groupingBy { it }.eachCount()

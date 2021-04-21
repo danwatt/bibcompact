@@ -45,9 +45,8 @@ object AdaptiveHuffmanCompress {
         val initFreqs = IntArray(257)
         Arrays.fill(initFreqs, 1)
         var freqs = FrequencyTable(initFreqs)
-        val enc = HuffmanEncoder(out)
-        enc.codeTree =
-            freqs.buildCodeTree() // Don't need to make canonical code because we don't transmit the code tree
+        // Don't need to make canonical code because we don't transmit the code tree
+        val enc = HuffmanEncoder(out,freqs.buildCodeTree())
         var count = 0 // Number of bytes read from the input file
         while (true) {
             // Read and encode one byte

@@ -83,7 +83,7 @@ class Version1Writer {
         val bytes = mutableListOf<Byte>()
         bytes.add(verse.tokens.size.toByte())
         verse.tokens.forEach { token ->
-            val position = lexicon.offset(token)
+            val position = lexicon.getLookupValue(token)
             position ?: throw IllegalArgumentException("Unknown token $token")
             val tokenBytes = position.toVarByte()
             bytes.addAll(tokenBytes)
