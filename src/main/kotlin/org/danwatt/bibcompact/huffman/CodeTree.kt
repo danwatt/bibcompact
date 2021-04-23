@@ -5,13 +5,7 @@ import java.lang.AssertionError
 import java.lang.StringBuilder
 import java.util.*
 
-/*
- * Reference Huffman coding
- * Copyright (c) Project Nayuki
- *
- * https://www.nayuki.io/page/reference-huffman-coding
- * https://github.com/nayuki/Reference-Huffman-coding
- */ /**
+/**
  * A binary tree that represents a mapping between symbols and binary strings.
  * The data structure is immutable. There are two main uses of a code tree:
  *

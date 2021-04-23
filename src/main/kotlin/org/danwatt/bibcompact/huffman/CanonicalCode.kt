@@ -2,13 +2,7 @@ package org.danwatt.bibcompact.huffman
 
 import java.util.*
 
-/*
- * Reference Huffman coding
- * Copyright (c) Project Nayuki
- *
- * https://www.nayuki.io/page/reference-huffman-coding
- * https://github.com/nayuki/Reference-Huffman-coding
- */ /**
+/**
  * A canonical Huffman code, which only describes the code length of
  * each symbol. Immutable. Code length 0 means no code for the symbol.
  *

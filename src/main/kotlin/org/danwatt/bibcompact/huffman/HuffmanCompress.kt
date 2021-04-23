@@ -2,13 +2,7 @@ package org.danwatt.bibcompact.huffman
 
 import java.io.*
 
-/*
- * Reference Huffman coding
- * Copyright (c) Project Nayuki
- *
- * https://www.nayuki.io/page/reference-huffman-coding
- * https://github.com/nayuki/Reference-Huffman-coding
- */ /**
+/**
  * Compression application using static Huffman coding.
  *
  * Usage: java HuffmanCompress InputFile OutputFile
@@ -73,7 +67,7 @@ object HuffmanCompress {
             if (v >= 256) throw RuntimeException("The code for a symbol is too long")
 
             // Write value as 8 bits in big endian
-            for (j in 7 downTo 0) out.write(v ushr j and 1)
+            for (j in 7 downTo 0) out.writeBit(v ushr j and 1)
         }
     }
 

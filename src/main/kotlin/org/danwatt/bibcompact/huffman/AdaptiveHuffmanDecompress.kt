@@ -3,13 +3,7 @@ package org.danwatt.bibcompact.huffman
 import java.io.*
 import java.util.*
 
-/*
- * Reference Huffman coding
- * Copyright (c) Project Nayuki
- *
- * https://www.nayuki.io/page/reference-huffman-coding
- * https://github.com/nayuki/Reference-Huffman-coding
- */ /**
+/**
  * Decompression application using adaptive Huffman coding.
  *
  * Usage: java AdaptiveHuffmanDecompress InputFile OutputFile

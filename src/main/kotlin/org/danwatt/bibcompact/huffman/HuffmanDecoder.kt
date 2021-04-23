@@ -3,13 +3,7 @@ package org.danwatt.bibcompact.huffman
 import java.io.IOException
 import java.util.*
 
-/*
- * Reference Huffman coding
- * Copyright (c) Project Nayuki
- *
- * https://www.nayuki.io/page/reference-huffman-coding
- * https://github.com/nayuki/Reference-Huffman-coding
- */ /**
+/**
  * Reads from a Huffman-coded bit stream and decodes symbols. Not thread-safe.
  * @see HuffmanEncoder
  */

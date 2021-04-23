@@ -21,16 +21,23 @@ class HuffmanTests {
             .containsEntry("lexiconBytes", 60924)
             .containsEntry("textHeaderBytes", 129)//Down from 13600
             .containsEntry("textBytes", 975112)
+            .containsEntry("totalBytes", 65 + 60924 + 129 + 975112)
     }
 
     private fun writeHuffman(lexicon: Lexicon, tokenized: List<TokenizedVerse>): Map<String, Int> {
-        val results = mutableMapOf<String, Int>()
-        results.putAll(writeHuffmanLexicon(lexicon))
-        results.putAll(writeHuffmanText(lexicon, tokenized))
-        return results
+        val baos = ByteArrayOutputStream()
+        val bos = BitOutputStream(baos)
+        val stats = mutableMapOf<String, Int>().also {
+            it.putAll(writeHuffmanLexicon(bos, lexicon))
+            it.putAll(writeHuffmanText(bos, lexicon, tokenized))
+        }
+        bos.close()
+        stats.put("totalBytes", baos.toByteArray().size)
+        return stats
     }
 
     private fun writeHuffmanText(
+        out: BitOutputStream,
         lexicon: Lexicon,
         tokenized: List<TokenizedVerse>
     ): Map<String, Int> {
@@ -38,7 +45,6 @@ class HuffmanTests {
         Arrays.fill(tokenFreqs, 0)
         tokenized.forEach { verse ->
             verse.tokens.forEach { token ->
-                val t = lexicon.getFullTokenStats(token)
                 val lexiconIndex = lexicon.getLookupValue(token)
                     ?: throw IllegalArgumentException("Unknown token $token")
                 tokenFreqs[lexiconIndex]++
@@ -46,14 +52,14 @@ class HuffmanTests {
         }
 
         val freqs = FrequencyTable(tokenFreqs)
-        val baos = ByteArrayOutputStream()
 
-        val encoder = HuffmanEncoder(BitOutputStream(baos), freqs.buildCodeTree())
+        val encoder = HuffmanEncoder(out, freqs.buildCodeTree())
         val codeTableSize =
             writeCanonicalCodeHeader(encoder.out, CanonicalCode(encoder.codeTree, freqs.getSymbolLimit()))
 
         val distribution = IntArray(21)
         Arrays.fill(distribution, 0)
+        val bytesAtStart = encoder.out.bytesWritten
         tokenized.forEach { verse ->
             verse.tokens.forEach { token ->
                 val position = lexicon.getLookupValue(token) ?: throw IllegalArgumentException("Unknown token $token")
@@ -61,21 +67,16 @@ class HuffmanTests {
                 distribution[encoder.codeTree.getCode(position).size]++
             }
         }
-        encoder.out.close()
-        println("Huffman encoded text length : " + baos.size())
-        println("Bit distribution:")
-        distribution.forEachIndexed { index, i ->
-            if (i > 0) {
-                println("$index bits: $i")
-            }
-        }
+        encoder.out.finishByte()
+        val bytesAtEnd = encoder.out.bytesWritten
+
         return mapOf(
-            "textBytes" to baos.size() - codeTableSize,
+            "textBytes" to (bytesAtEnd - bytesAtStart),
             "textHeaderBytes" to codeTableSize
         )
     }
 
-    private fun writeHuffmanLexicon(lexicon: Lexicon): Map<String, Int> {
+    private fun writeHuffmanLexicon(out: BitOutputStream, lexicon: Lexicon): Map<String, Int> {
         val highestCharacterCode = lexicon.getTokens().asSequence()
             .flatMap { it.token.toCharArray().asSequence() }
             .maxByOrNull { it }!!
@@ -89,8 +90,7 @@ class HuffmanTests {
         }
 
         val freqs = FrequencyTable(initFreqs)
-        val baos = ByteArrayOutputStream()
-        val encoder = HuffmanEncoder(BitOutputStream(baos), freqs.buildCodeTree())
+        val encoder = HuffmanEncoder(out, freqs.buildCodeTree())
 
         val codeTableSize =
             writeCanonicalCodeHeader(encoder.out, CanonicalCode(encoder.codeTree, freqs.getSymbolLimit()))
@@ -98,6 +98,7 @@ class HuffmanTests {
         var totalChars = 0
         val distribution = IntArray(21)
         Arrays.fill(distribution, 0)
+        val bytesAtStart = encoder.out.bytesWritten
         lexicon.getTokens().forEach { token ->
             token.token.chars().forEach { char ->
                 totalChars++
@@ -109,50 +110,16 @@ class HuffmanTests {
             val bits = encoder.codeTree.getCode(0)
             distribution[bits.size]++
         }
-        encoder.out.close()
+        encoder.out.finishByte()
+        val bytesAtEnd = encoder.out.bytesWritten
 
-        println("Baos has length: ${baos.size()}, compared to $totalChars raw")
-        println("Bit distribution:")
-        distribution.forEachIndexed { index, i ->
-            if (i > 0) {
-                println("$index bits: $i")
-            }
-        }
         return mapOf(
-            "lexiconBytes" to baos.size() - codeTableSize,
+            "lexiconBytes" to (bytesAtEnd - bytesAtStart),
             "lexiconHeaderBytes" to codeTableSize
         )
     }
 
     private fun writeCanonicalCodeHeader(out: BitOutputStream, canonCode: CanonicalCode): Int {
-        return CanonicalCodeIO.write(canonCode,out)
-        /*
-        var longestCode = 0
-        var shortest = Int.MAX_VALUE
-        val distribution = IntArray(21)
-        Arrays.fill(distribution, 0)
-        var bytesWritten = 0
-        for (i in 0 until canonCode.getSymbolLimit()) {
-            val v = canonCode.getCodeLength(i)
-            longestCode = kotlin.math.max(longestCode, v)
-            if (v > 0) {
-                shortest = kotlin.math.min(shortest, v)
-            }
-            distribution[v]++
-            if (v >= 256) throw RuntimeException("The code for a symbol is too long")
-            // Write value as 8 bits in big endian
-            for (j in 7 downTo 0) out.write(v ushr j and 1)
-            bytesWritten++
-            print("${v.toString(16).padStart(2,'0')} ")
-            if ((i+1) % 32 == 0) {
-                println()
-            }
-        }
-
-        println("Longest code encountered: $longestCode bits, shortest: $shortest")
-        distribution.forEachIndexed { index, i ->
-            println("$index: $i")
-        }
-        return bytesWritten*/
+        return CanonicalCodeIO.write(canonCode, out)
     }
 }

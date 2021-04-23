@@ -8,13 +8,7 @@ import java.io.EOFException
 import java.io.InputStream
 import java.util.*
 
-/*
- * Reference Huffman coding
- * Copyright (c) Project Nayuki
- *
- * https://www.nayuki.io/page/reference-huffman-coding
- * https://github.com/nayuki/Reference-Huffman-coding
- */ /**
+/**
  * A stream of bits that can be read. Because they come from an underlying byte stream,
  * the total number of bits is always a multiple of 8. The bits are read in big endian.
  * Mutable and not thread-safe.
@@ -34,7 +28,7 @@ class BitInputStream(val input: InputStream) : AutoCloseable {
      * @throws IOException if an I/O exception occurred
      */
     @Throws(IOException::class)
-    fun read(): Int {
+    fun readBit(): Int {
         if (currentByte == -1) return -1
         if (numBitsRemaining == 0) {
             currentByte = input.read()
@@ -55,7 +49,7 @@ class BitInputStream(val input: InputStream) : AutoCloseable {
      */
     @Throws(IOException::class)
     fun readNoEof(): Int {
-        val result = read()
+        val result = readBit()
         return if (result != -1) result else throw EOFException()
     }
 
@@ -68,6 +62,14 @@ class BitInputStream(val input: InputStream) : AutoCloseable {
         input.close()
         currentByte = -1
         numBitsRemaining = 0
+    }
+
+    fun readBits(numBits: Int): Int {
+        var n = 0
+        for (i in (numBits - 1) downTo 0) {
+            n = n or (this.readBit() shl i)
+        }
+        return n
     }
     /*---- Constructor ----*/ /**
      * Constructs a bit input stream based on the specified byte input stream.

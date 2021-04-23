@@ -4,15 +4,8 @@ import java.lang.AutoCloseable
 import kotlin.Throws
 import java.io.IOException
 import java.io.OutputStream
-import java.util.*
 
-/*
- * Reference Huffman coding
- * Copyright (c) Project Nayuki
- *
- * https://www.nayuki.io/page/reference-huffman-coding
- * https://github.com/nayuki/Reference-Huffman-coding
- */ /**
+/**
  * A stream where bits can be written to. Because they are written to an underlying
  * byte stream, the end of the stream is padded with 0's up to a multiple of 8 bits.
  * The bits are written in big endian. Mutable and not thread-safe.
@@ -20,10 +13,13 @@ import java.util.*
  */
 class BitOutputStream(val output: OutputStream) : AutoCloseable {
     // The accumulated bits for the current byte, always in the range [0x00, 0xFF].
-    private var currentByte: Int
+    var bytesWritten: Int = 0
+        get() = field
+    private var currentByte: Int = 0
+
 
     // Number of accumulated bits in the current byte, always between 0 and 7 (inclusive).
-    private var numBitsFilled: Int
+    private var numBitsFilled: Int = 0
     /*---- Methods ----*/
     /**
      * Writes a bit to the stream. The specified bit must be 0 or 1.
@@ -31,7 +27,7 @@ class BitOutputStream(val output: OutputStream) : AutoCloseable {
      * @throws IOException if an I/O exception occurred
      */
     @Throws(IOException::class)
-    fun write(b: Int) {
+    fun writeBit(b: Int) {
         require(!(b != 0 && b != 1)) { "Argument must be 0 or 1" }
         currentByte = currentByte shl 1 or b
         numBitsFilled++
@@ -39,6 +35,7 @@ class BitOutputStream(val output: OutputStream) : AutoCloseable {
             output.write(currentByte)
             currentByte = 0
             numBitsFilled = 0
+            bytesWritten++
         }
     }
 
@@ -50,16 +47,17 @@ class BitOutputStream(val output: OutputStream) : AutoCloseable {
      */
     @Throws(IOException::class)
     override fun close() {
-        while (numBitsFilled != 0) write(0)
+        finishByte()
         output.close()
     }
-    /*---- Constructor ----*/ /**
-     * Constructs a bit output stream based on the specified byte output stream.
-     * @param out the byte output stream
-     * @throws NullPointerException if the output stream is `null`
-     */
-    init {
-        currentByte = 0
-        numBitsFilled = 0
+
+    fun finishByte() {
+        while (numBitsFilled != 0) writeBit(0)
+    }
+
+    fun writeBits(i: Int, bitsNeededToWrite: Int) {
+        for (j in (bitsNeededToWrite - 1) downTo 0) {
+            writeBit(i ushr j and 1)
+        }
     }
 }

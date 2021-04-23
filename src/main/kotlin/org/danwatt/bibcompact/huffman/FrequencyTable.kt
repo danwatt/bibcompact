@@ -3,13 +3,7 @@ package org.danwatt.bibcompact.huffman
 import java.util.*
 import kotlin.math.min
 
-/*
- * Reference Huffman coding
- * Copyright (c) Project Nayuki
- *
- * https://www.nayuki.io/page/reference-huffman-coding
- * https://github.com/nayuki/Reference-Huffman-coding
- */ /**
+/**
  * A table of symbol frequencies. Mutable and not thread-safe. Symbols values are
  * numbered from 0 to symbolLimit1. A frequency table is mainly used like this:
  *

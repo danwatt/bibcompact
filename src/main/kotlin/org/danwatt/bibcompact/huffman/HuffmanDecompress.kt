@@ -4,13 +4,7 @@ import kotlin.Throws
 import kotlin.jvm.JvmStatic
 import java.io.*
 
-/*
- * Reference Huffman coding
- * Copyright (c) Project Nayuki
- *
- * https://www.nayuki.io/page/reference-huffman-coding
- * https://github.com/nayuki/Reference-Huffman-coding
- */ /**
+/**
  * Decompression application using static Huffman coding.
  *
  * Usage: java HuffmanDecompress InputFile OutputFile

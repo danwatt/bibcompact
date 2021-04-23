@@ -1,25 +1,55 @@
 ## BibCompact
 
+> Through publication, mankind transmits and therefore preserves its knowledge, culture, and faith.
+>
+> The ongoing development of new publication media is interwoven with the progress of
+> civilization - contributing to it or the result of it. The two are intimately related.
+>
+> The first images in a new medium are frequently of older and well-established knowledge.
+> At a minimum, they are just facsimiles of older representations, rendered in the new medium
+> but lacking its richness and leaving vacant its added dimensions. Radio programming can be
+> played on television, color photography can reproduce black and white images, printed books
+> can simply record a spoken dialog, and electronic books can simply project the printed page
+> onto a display screen - but these are merely the first timid steps in the development and
+> nurturing of a new medium. Much more is possible and, in fact, inevitable.
+>
+> Some important possibilities are realized with this first publication of the Holy Bible as a
+> hand-held electronic reference. It goes beyond a simple electronic "printing" and begins to
+> truly utilize our new medium of micro-components, algorithms, and mathematical data structures.
+>
+> The reader enjoys an unprecedented "view" of the Bible. Queries never before practical are
+> satisfied instantly. Interrelationships and structure never before visible are easily discovered.
+>
+> It seems to me that these improvements are very much in keeping with the historical tradition
+> that has made the Bible increasingly accessible - and perhaps again the vanguard of a new medium.
+>
+> -- KJ-21 Instruction Manual, Peter N. Yianilos, 1989
+
+This project is part of
+an [ongoing investigation](https://danwatt.org/2021/04/studying-an-old-e-reader-for-fun-certainly-not-profit/)
+into a device made in 1989, a handheld Bible reader that managed to compress 4.3MB of text into less than 1MB, while
+providing for very fast searching.
+
+This project's goal is to determine how it might be possible to accomplish that feat using techniques that should have
+been possible with the technology of the time, while at the same time comparing the results to more modern compression
+and search tools.
+
 What we know:
 
-* Uncompressed and without any special encoding, the ASCII text of the KJV is approximately 4.5 MB.
-* The Franklin Electronics KJ-21 had "1 MB of memory", and had not only the text of the KJV in what appears to be a
+* Uncompressed and without any special encoding, the ASCII text of the KJV is approximately 4.3 MB.
+* The Franklin Electronics KJ-21 had 1.125 MB of memory, and had not only the text of the KJV in what appears to be a
   case-sensitive format, but also had a "file format" that enabled relative fast full-text searching
 * The KJV, along with application code and a couple small games was able to fit on a 1MB Gameboy cartridge.
 * The best text compressor to date (`zpaq`) can squeeze the KJV down to about 740kb, however it is extremely memory and
   CPU intensive to compress and decompress this much text.
-* The KJ-21 also had a built-in thesaurus, mapping relationships between words that had similar meanings.
-
-Why:
-
-* To understand the thought process of a computer scientist in the 1980's, having to make tradeoffs of limited memory
-  and slow hardware to store a large amount of searchable text on an embedded device.
+* The KJ-21 also had a built-in thesaurus and word inflection database, mapping relationships between words that had
+  similar meanings.
 
 ## Design Considerations
 
-* Seeking to a specific point by reference should be very fast (under a second on a Z80 class CPU). Seeking to the final
-  verse in Revelations should be close to, if not as fast as, seeking to the first verse in Genesis.
-* Full text searching should be possible, and may be slower than seeking by reference (1-10 seconds on a Z80 class CPU)
+* Seeking to a specific point by reference should be very fast (under a second on a 8086 class CPU). Seeking to the
+  final verse in Revelations should be close to, if not as fast as, seeking to the first verse in Genesis.
+* Full text searching should be possible, and may be slower than seeking by reference (1-10 seconds on a 8086 class CPU)
     * Full text searches by a known prefix are allowed (ie: `word.*`), but not with a known suffix (`.*ord`)
 * Assume that there is a reasonable amount of RAM available for decompression / decoding, up to maybe 2-4X the amount of
   memory required to hold the screen-visible text.
@@ -41,12 +71,11 @@ Why:
 * The KJV (OT+NT) has a total of about 790,000 words
 * If treat a word as a symbol, and we add individual instances of punctuation ( `.,:;-"?!`, etc), there are about
   970,000 total symbols
-* About 13,578 unique words when case-sensitive (14 bits), 12,593 when case-insensitive.
-* 66 books (8 bits), 1,189 chapters (11 bits), 31,102 verses (15 bits)
+* The KVJ has 66 books (8 bits), 1,189 chapters (11 bits), 31,102 verses (15 bits)
 * The longest verse in the KJV is Esther 8:9 at:
-  * 528 characters
-  * 90 words case-sensitive, 51 distinct words
-  * 104 tokens, including punctuation, 56 distinct.
+    * 528 characters
+    * 90 words case-sensitive, 51 distinct words
+    * 104 tokens, including punctuation, 56 distinct.
 * The longest chapter in the Bible is Psalms 119, at 176 verses (8 bits) and around 2,400 total words (12 bits).
 
 Common stop words account for much of the text (case-insensitive):
@@ -112,53 +141,45 @@ Some additional optimizations:
 * Better understand the "linking signal" used in patent 5,153,831
 * N-grams (likely just 2 or 3)
     * Bi-grams
-        * `the LORD` - 5,855
-        * `shall be` - 2,461
-        * `all the` - 2,075
-        * `I will` - 1,922
-        * `of Israel` - 1,692
+        * `, and` - 24,921
+        * `of the` - 11,428
+        * `the LORD` - 5,962
+        * `in the` - 4,879
     * Tri-grams
-        * `of the LORD` - 1,593
+        * `, and the` - 2,438
+        * `of the LORD` - 1,625
         * `the son of` - 1,289
         * `the children of` - 1,254
+        * `out of the` - 794
 * Huffman encoding, at the verse and chapter level
 * Arithmetic coding?
 
 ### Resources
 
-* CSV and other formats of public domain Bibles: https://github.com/scrollmapper/bible_databases
-* Huffman encoding: https://github.com/marvinjason/HuffmanCoding
-* Hutter prize in compression: https://en.wikipedia.org/wiki/Hutter_Prize
-* Stop words in
-  Lucene: https://github.com/apache/lucene-solr/blob/master/lucene/analysis/common/src/java/org/apache/lucene/analysis/en/EnglishAnalyzer.java#L46
-* Other Bible links: https://hackathon.bible/data/
-* Unlicensed Gameboy Bible ROM: https://wowroms.com/en/roms/nintendo-gameboy/king-james-bible-usa-unl/9499.html
-* Some statistics on the Bible: https://www.artbible.info/concordance/
-* https://toasters.rocks/king-james-bible/
+* [CSV and other formats of public domain Bibles](https://github.com/scrollmapper/bible_databases)
+* [Huffman encoding](https://github.com/marvinjason/HuffmanCoding)
+* [Hutter prize in compression:](https://en.wikipedia.org/wiki/Hutter_Prize)
+* [Stop words in Lucene](https://github.com/apache/lucene-solr/blob/master/lucene/analysis/common/src/java/org/apache/lucene/analysis/en/EnglishAnalyzer.java#L46)
+* [Other Bible links](https://hackathon.bible/data/)
+* [Unlicensed Gameboy Bible ROM](https://wowroms.com/en/roms/nintendo-gameboy/king-james-bible-usa-unl/9499.html)
+    * [An analysis of the Gameboy ROM](https://toasters.rocks/king-james-bible/)
+* [Some statistics on the Bible](https://www.artbible.info/concordance/)
 
-```
-Compression	Size	Ratio
-zpaq -m5	739407	16.682%
-bzip2 -9	993406	22.412%
-lzma -9	        1048408	23.653%
-xz -9	        1048616	23.658%
-7z -mx9 	1048710	23.660%
-zstd –ultra -22	1068137	24.099%
-rar -m5	        1142360	25.773%
-gzip -9	        1385457	31.258%
-zip -9	        1385595	31.261%
-lz4 -9	        1596418	36.017%
-lzop -9	        1611939	36.367%
-Uncompressed	4432375	100%
+## Current compression stats
 
-
-Decompression	Time (s)
-lz4	        0.008
-zstd	        0.015
-lzo	        0.016
-rar	        0.035
-gzip/zip	0.040
-lzma/xz/7z	0.080
-bzip            20.210
-zpaq	        16.203
-```
+| Compression     | Size    | Ratio   |
+|-----------------|---------|---------|
+| zpaq -m5        | 739407  | 16.682% |
+| bibcompact LZMA | 819765  | 18.494% |
+| bzip2 -9        | 993406  | 22.412% |
+| bibcompact HUFF | 1037486 | 23.407% |
+| lzma -9         | 1048408 | 23.653% |
+| xz -9           | 1048616 | 23.658% |
+| 7z -mx9         | 1048710 | 23.660% |
+| zstd –ultra -22 | 1068137 | 24.099% |
+| rar -m5         | 1142360 | 25.773% |
+| gzip -9         | 1385457 | 31.258% |
+| zip -9          | 1385595 | 31.261% |
+| lz4 -9          | 1596418 | 36.017% |
+| lzop -9         | 1611939 | 36.367% |
+| Uncompressed    | 4432375 | 100%    |

@@ -3,16 +3,12 @@ package org.danwatt.bibcompact.huffman
 import kotlin.math.ceil
 import kotlin.math.log2
 import kotlin.math.max
-import kotlin.math.min
 
 object CanonicalCodeIO {
     fun write(code: CanonicalCode, out: BitOutputStream): Int {
-        var bitsWritten = 0
+        val bytesAtStart = out.bytesWritten
         val numCodes = code.getSymbolLimit()
-        for (i in 15 downTo 0) {
-            out.write(numCodes ushr i and 1)
-            bitsWritten++
-        }
+        out.writeBits(numCodes, 16)
         val codeArray = IntArray(code.getSymbolLimit())
         var bitsNeededToWrite = 1
         for (i in 0 until code.getSymbolLimit()) {
@@ -22,23 +18,13 @@ object CanonicalCodeIO {
             codeArray[i] = v
             bitsNeededToWrite = max(bitsNeededToWrite, ceil(log2(v.toFloat())).toInt())
         }
-        for (j in 7 downTo 0) {
-            out.write(bitsNeededToWrite ushr j and 1)
-            bitsWritten++
-        }
+        out.writeBits(bitsNeededToWrite, 8)
         var i = 0
-        var run = 0
-        println("Using $bitsNeededToWrite bits for each codes")
+        var run: Int
+
         while (i < codeArray.size) {
-            print("Code ${codeArray[i]}: 1")
-            out.write(1)
-            bitsWritten++
-            for (j in (bitsNeededToWrite - 1) downTo 0) {
-                print(codeArray[i] ushr j and 1)
-                out.write(codeArray[i] ushr j and 1)
-                bitsWritten++
-            }
-            println()
+            out.writeBit(1)
+            out.writeBits(codeArray[i], bitsNeededToWrite)
             run = 0
             while (i + 1 + run < codeArray.size
                 && codeArray[i + 1 + run] == codeArray[i]
@@ -46,29 +32,34 @@ object CanonicalCodeIO {
             ) {
                 run++
             }
-            if (run > 2) {
-                out.write(0)
-                bitsWritten++
-                print("Run of length $run: 0")
-                for (j in 7 downTo 0) {
-                    print(run ushr j and 1)
-                    out.write(run ushr j and 1)
-                    bitsWritten++
-                }
-                println()
+            if (run > 2) {//TODO: dont hard-code 2
+                out.writeBit(0)
+                out.writeBits(run, 8)
                 i += run
             }
             i++
         }
-        while (bitsWritten % 8 != 0) {
-            out.write(0)
-            bitsWritten++
-        }
-        return bitsWritten / 8
+        out.finishByte()
+        return out.bytesWritten - bytesAtStart
     }
 
     fun read(input: BitInputStream): CanonicalCode {
-        val a = IntArray(123)
-        return CanonicalCode(a)
+        val numCodes = input.readBits(16)
+        val codeBits = input.readBits(8)
+        var codeOffset = 0
+        val codes = IntArray(numCodes)
+        while (codeOffset < numCodes) {
+            when (input.readBit()) {
+                1 -> codes[codeOffset++] = input.readBits(codeBits)
+                0 -> {
+                    val runLength = input.readBits(8)
+                    for (i in 0 until runLength) {
+                        codes[codeOffset] = codes[codeOffset - 1]
+                        codeOffset++
+                    }
+                }
+            }
+        }
+        return CanonicalCode(codes)
     }
 }
