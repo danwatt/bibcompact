@@ -2,6 +2,7 @@ package org.danwatt.bibcompact.huffman
 
 import java.io.*
 import java.util.*
+import kotlin.system.exitProcess
 
 /**
  * Compression application using adaptive Huffman coding.
@@ -23,7 +24,7 @@ object AdaptiveHuffmanCompress {
         // Handle command line arguments
         if (args.size != 2) {
             System.err.println("Usage: java AdaptiveHuffmanCompress InputFile OutputFile")
-            System.exit(1)
+            exitProcess(1)
             return
         }
         val inputFile = File(args[0])

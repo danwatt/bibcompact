@@ -71,6 +71,12 @@ class BitInputStream(val input: InputStream) : AutoCloseable {
         }
         return n
     }
+
+    fun finishByte() {
+        while (numBitsRemaining > 0) {
+            readBit()
+        }
+    }
     /*---- Constructor ----*/ /**
      * Constructs a bit input stream based on the specified byte input stream.
      * @param in the byte input stream

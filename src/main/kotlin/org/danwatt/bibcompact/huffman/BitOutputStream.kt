@@ -14,7 +14,6 @@ import java.io.OutputStream
 class BitOutputStream(val output: OutputStream) : AutoCloseable {
     // The accumulated bits for the current byte, always in the range [0x00, 0xFF].
     var bytesWritten: Int = 0
-        get() = field
     private var currentByte: Int = 0
 
 

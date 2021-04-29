@@ -121,17 +121,18 @@ class CanonicalCode {
 
     // Recursive helper method for the above constructor.
     private fun buildCodeLengths(node: Node, depth: Int) {
-        if (node is InternalNode) {
-            buildCodeLengths(node.left, depth + 1)
-            buildCodeLengths(node.right, depth + 1)
-        } else if (node is Leaf) {
-            val symbol = node.symbol
-            require(symbol < codeLengths.size) { "Symbol exceeds symbol limit" }
-            // Note: CodeTree already has a checked constraint that disallows a symbol in multiple leaves
-            if (codeLengths[symbol] != 0) throw AssertionError("Symbol has more than one code")
-            codeLengths[symbol] = depth
-        } else {
-            throw AssertionError("Illegal node type")
+        when (node) {
+            is InternalNode -> {
+                buildCodeLengths(node.left, depth + 1)
+                buildCodeLengths(node.right, depth + 1)
+            }
+            is Leaf -> {
+                val symbol = node.symbol
+                require(symbol < codeLengths.size) { "Symbol exceeds symbol limit" }
+                // Note: CodeTree already has a checked constraint that disallows a symbol in multiple leaves
+                if (codeLengths[symbol] != 0) throw AssertionError("Symbol has more than one code")
+                codeLengths[symbol] = depth
+            }
         }
     }
     /*---- Various methods ----*/

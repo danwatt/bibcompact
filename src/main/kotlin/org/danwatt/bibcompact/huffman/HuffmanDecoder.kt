@@ -31,7 +31,6 @@ class HuffmanDecoder(val input: BitInputStream, var codeTree: CodeTree) {
                 when (nextNode) {
                     is Leaf -> return nextNode.symbol
                     is InternalNode -> nextNode
-                    else -> throw AssertionError("Illegal node type")
                 }
         }
     }

@@ -172,7 +172,7 @@ class Version1WriterTest {
             val lb = compress(algo, lexBytes)
             val vb = compress(algo, verseBytes)
 
-            println("Compressing the header with $algo: ${Companion.compress(algo, headerBytes).size}")
+            println("Compressing the header with $algo: ${compress(algo, headerBytes).size}")
 
             Triple(algo, lb.size, vb.size)
         }.associateBy { it.first }.mapValues { it.value.second to it.value.third }
@@ -201,8 +201,8 @@ class Version1WriterTest {
             baos.close()
             val verseBytes = baos.toByteArray()
 
-            val lb = Companion.compress(LZMA, lexBytes)
-            val vb = Companion.compress(LZMA, verseBytes)
+            val lb = compress(LZMA, lexBytes)
+            val vb = compress(LZMA, verseBytes)
 
             println("Translation $trans: lex: ${lb.size} verse: ${vb.size}")
 

@@ -6,24 +6,24 @@ object Lzw {
         // Build the dictionary.
         var dictSize = 256
         val dictionary = mutableMapOf<String, Int>()
-        (0 until dictSize).forEach { dictionary.put(it.toChar().toString(), it)}
+        (0 until dictSize).forEach { dictionary[it.toChar().toString()] = it }
 
         var w = ""
         val result = mutableListOf<Int>()
         for (c in uncompressed) {
             val wc = w + c
-            if (dictionary.containsKey(wc))
-                w = wc
+            w = if (dictionary.containsKey(wc))
+                wc
             else {
                 result.add(dictionary[w]!!)
                 // Add wc to the dictionary.
-                dictionary.put(wc, dictSize++)
-                w = c.toString()
+                dictionary[wc] = dictSize++
+                c.toString()
             }
         }
 
         // Output the code for w
-        if (!w.isEmpty()) result.add(dictionary[w]!!)
+        if (w.isNotEmpty()) result.add(dictionary[w]!!)
         return result
     }
 
@@ -32,22 +32,21 @@ object Lzw {
         // Build the dictionary.
         var dictSize = 256
         val dictionary = mutableMapOf<Int, String>()
-        (0 until dictSize).forEach { dictionary.put(it, it.toChar().toString())}
+        (0 until dictSize).forEach { dictionary[it] = it.toChar().toString() }
 
         var w = compressed.removeAt(0).toChar().toString()
         val result = StringBuilder(w)
         for (k in compressed) {
             var entry: String
-            if (dictionary.containsKey(k))
-                entry = dictionary[k]!!
-            else if (k == dictSize)
-                entry = w + w[0]
-            else
-                throw IllegalArgumentException("Bad compressed k: $k")
+            when {
+                dictionary.containsKey(k) -> entry = dictionary[k]!!
+                k == dictSize -> entry = w + w[0]
+                else -> throw IllegalArgumentException("Bad compressed k: $k")
+            }
             result.append(entry)
 
             // Add w + entry[0] to the dictionary.
-            dictionary.put(dictSize++, w + entry[0])
+            dictionary[dictSize++] = w + entry[0]
             w = entry
         }
         return result.toString()

@@ -183,3 +183,4 @@ Some additional optimizations:
 | lz4 -9          | 1596418 | 36.017% |
 | lzop -9         | 1611939 | 36.367% |
 | Uncompressed    | 4432375 | 100%    |
+

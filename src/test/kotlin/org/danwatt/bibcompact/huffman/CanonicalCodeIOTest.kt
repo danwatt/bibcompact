@@ -35,7 +35,7 @@ class CanonicalCodeIOTest {
         val dt = decoded.toCodeTree()
         for (i in freqs.indices) {
             //println("Code $i: expected ${ot.getCode(i).joinToString(",")} actual ${dt.getCode(i).joinToString(",")}")
-            assertThat(ot.getCode(i)).isEqualTo(dt.getCode(i)).describedAs("Code number ${i}")
+            assertThat(ot.getCode(i)).isEqualTo(dt.getCode(i)).describedAs("Code number $i")
         }
     }
 

@@ -3,6 +3,7 @@ package org.danwatt.bibcompact.huffman
 import kotlin.Throws
 import kotlin.jvm.JvmStatic
 import java.io.*
+import kotlin.system.exitProcess
 
 /**
  * Decompression application using static Huffman coding.
@@ -18,7 +19,7 @@ object HuffmanDecompress {
         // Handle command line arguments
         if (args.size != 2) {
             System.err.println("Usage: java HuffmanDecompress InputFile OutputFile")
-            System.exit(1)
+            exitProcess(1)
             return
         }
         val inputFile = File(args[0])

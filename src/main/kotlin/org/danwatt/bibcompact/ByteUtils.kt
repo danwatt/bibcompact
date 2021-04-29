@@ -3,6 +3,9 @@ package org.danwatt.bibcompact
 import java.io.InputStream
 import kotlin.experimental.or
 
+fun Int.toHexByte() : String = this.toString(16).padStart(2,'0')
+fun Int.toHexWord() : String = this.toString(16).padStart(4,'0')
+
 fun Int.to16bitString(): String =
     Integer.toBinaryString(this).padStart(16, '0')
 

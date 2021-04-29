@@ -11,6 +11,7 @@ class StatsTest {
     private val verses = BibleCsvParser().readTranslation("kjv")
     private val t = VerseTokenizer()
     private val tokenized = verses.map { t.tokenize(it) }
+    private val lexicon = Lexicon.build(tokenized)
 
     @Test
     fun `book chapter verse counts`() {
@@ -103,14 +104,14 @@ class StatsTest {
 
     @Test
     fun bitDistribution() {
-        val lex = Lexicon.build(tokenized)
+
         val bitDistibution = tokenized.map { tv ->
-            val max = tv.tokens.mapNotNull { lex.getLookupValue(it) }.maxOrNull() ?: 0
+            val max = tv.tokens.mapNotNull { lexicon.getLookupValue(it) }.maxOrNull() ?: 0
             val bits = ceil(log2(max.toFloat())).toInt()
             bits
         }.groupingBy { it }.eachCount()
         bitDistibution.toSortedMap()
-            .forEach { (bits, count) -> println("Verses that can be represented using ${bits} bits : $count") }
+            .forEach { (bits, count) -> println("Verses that can be represented using $bits bits : $count") }
     }
 
     @Test
@@ -118,6 +119,7 @@ class StatsTest {
         val allTokens = tokenized.flatMap { it.tokens }.toList()
         assertThat(allTokens).hasSize(917089)
         assertThat(allTokens.distinct()).hasSize(13600)
+        assertThat(allTokens.distinct().map { it.length }.sum()).isEqualTo(95433)
         assertThat(allTokens.map { it.toLowerCase() }.distinct()).hasSize(12616)
         val counts = allTokens.groupingBy { it }.eachCount()
         val over1000: Map<String, Int> = counts.filterValues { it > 1000 }
@@ -159,8 +161,60 @@ class StatsTest {
             trans to (listOf(counts.size, allTokens.size, justOnce, caseInsensitiveCount.size))
         }.toMap()
 
-        stats.forEach { trans, tokens ->
+        stats.forEach { (trans, tokens) ->
             println("Translation $trans has ${tokens[0]} distinct tokens, ${tokens[1]} total, ${tokens[2]} just once, ${tokens[3]} case-insensitive")
+        }
+    }
+
+
+
+    @Test
+    fun capitalizationTest() {
+        val upperCaseOnlyWords = mutableSetOf<String>()
+        val bothWords = mutableSetOf<String>()
+        val allWords = mutableSetOf<String>()
+        val lowerCaseOnlyWords = mutableSetOf<String>()
+        val allCaps = mutableSetOf<String>()
+
+        lexicon.getTokens().map { t ->
+            val tok = t.token
+            allWords.add(tok)
+            if (tok[0].isUpperCase()) {
+                if (tok.length > 1 && tok[1].isUpperCase()) {
+                    allCaps.add(tok)
+                }
+                if (lexicon.getFullTokenStats(tok.toLowerCase()) == null) {
+                    upperCaseOnlyWords.add(tok)
+                } else {
+                    bothWords.add(tok)
+                }
+            }
+            if (tok[0].isLowerCase()) {
+                if (lexicon.getFullTokenStats(tok.capitalize()) == null) {
+                    lowerCaseOnlyWords.add(tok)
+                } else {
+                    bothWords.add(tok)
+                }
+            }
+        }
+
+        println("There are a total of ${allWords.size} words")
+        println("There are a total of ${upperCaseOnlyWords.size} upper case only words")
+        println("There are a total of ${lowerCaseOnlyWords.size} lower case only words")
+        println("There are a total of ${bothWords.size} both words")
+        println("There are a total of ${allCaps.size} words that are in all caps. ${allCaps.sorted()}")
+
+        allCaps.sorted().forEach { w ->
+            val lower = w.toLowerCase()
+            val cap = w.toLowerCase().capitalize()
+            print("$w ")
+            if (lexicon.getFullTokenStats(lower) != null) {
+                print("$lower ")
+            }
+            if (lexicon.getFullTokenStats(cap) != null) {
+                print("$cap ")
+            }
+            println()
         }
     }
 }

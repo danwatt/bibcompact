@@ -2,14 +2,23 @@ package org.danwatt.bibcompact
 
 data class LexiconEntry(
     val token: String,
-    var firstVerse: Int,
-    var lastVerse: Int = firstVerse,
+    var firstVerse: Int? = null,
+    var lastVerse: Int? = firstVerse,
     var totalOccurrences: Int = 0
 ) {
     fun addVerseInstance(verseIndex: Int) {
         totalOccurrences++
-        if (verseIndex < firstVerse) firstVerse = verseIndex
-        if (verseIndex > lastVerse) lastVerse = verseIndex
+        if (firstVerse == null) {
+            firstVerse = verseIndex
+        } else {
+            if (verseIndex < firstVerse!!) firstVerse = verseIndex
+        }
+        if (lastVerse == null) {
+            lastVerse = verseIndex
+        } else {
+            if (verseIndex > lastVerse!!) lastVerse = verseIndex
+        }
+
     }
 }
 
@@ -23,7 +32,7 @@ class Lexicon(private val tokens: List<LexiconEntry>) {
 
     fun getLookupValue(token: String): Int? = lookup[token]
     fun getFullTokenStats(token: String): LexiconEntry? {
-        return this.getTokens().firstOrNull() { it.token == token }
+        return this.getTokens().firstOrNull { it.token == token }
     }
 
     companion object {
@@ -40,6 +49,10 @@ class Lexicon(private val tokens: List<LexiconEntry>) {
                     .thenBy { it.token }
             )
             return Lexicon(sorted)
+        }
+
+        fun buildFromWordList(words: List<String>): Lexicon {
+            return Lexicon(words.map { LexiconEntry(it) })
         }
     }
 

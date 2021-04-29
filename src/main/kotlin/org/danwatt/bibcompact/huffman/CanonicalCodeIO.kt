@@ -8,31 +8,32 @@ object CanonicalCodeIO {
     fun write(code: CanonicalCode, out: BitOutputStream): Int {
         val bytesAtStart = out.bytesWritten
         val numCodes = code.getSymbolLimit()
-        out.writeBits(numCodes, 16)
-        val codeArray = IntArray(code.getSymbolLimit())
+        val codeLengths = IntArray(code.getSymbolLimit())
         var bitsNeededToWrite = 1
         for (i in 0 until code.getSymbolLimit()) {
-            val v = code.getCodeLength(i)
-            // For this file format, we only support codes up to 255 bits long
-            if (v >= 256) throw RuntimeException("The code for a symbol is too long")
-            codeArray[i] = v
-            bitsNeededToWrite = max(bitsNeededToWrite, ceil(log2(v.toFloat())).toInt())
+            val length = code.getCodeLength(i)
+            if (length >= 256) throw RuntimeException("The code for a symbol is too long")
+            codeLengths[i] = length
+            bitsNeededToWrite = max(bitsNeededToWrite, ceil(log2(length.toFloat())).toInt())
         }
+        out.writeBits(numCodes, 16)
         out.writeBits(bitsNeededToWrite, 8)
+
         var i = 0
         var run: Int
 
-        while (i < codeArray.size) {
+        while (i < codeLengths.size) {
             out.writeBit(1)
-            out.writeBits(codeArray[i], bitsNeededToWrite)
+            out.writeBits(codeLengths[i], bitsNeededToWrite)
             run = 0
-            while (i + 1 + run < codeArray.size
-                && codeArray[i + 1 + run] == codeArray[i]
+            while (i + 1 + run < codeLengths.size
+                && codeLengths[i + 1 + run] == codeLengths[i]
                 && run < 255
             ) {
                 run++
             }
-            if (run > 2) {//TODO: dont hard-code 2
+            //We need to save at least 9 bits to make this worthwhile
+            if (run * bitsNeededToWrite > 9) {
                 out.writeBit(0)
                 out.writeBits(run, 8)
                 i += run
@@ -60,6 +61,7 @@ object CanonicalCodeIO {
                 }
             }
         }
+        input.finishByte()
         return CanonicalCode(codes)
     }
 }

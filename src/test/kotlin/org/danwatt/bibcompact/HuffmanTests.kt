@@ -3,28 +3,99 @@ package org.danwatt.bibcompact
 import org.assertj.core.api.Assertions.assertThat
 import org.danwatt.bibcompact.huffman.*
 import org.junit.Test
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.lang.IllegalArgumentException
 import java.util.*
 
 class HuffmanTests {
+    private val verses = BibleCsvParser().readTranslation("kjv")
+    private val tokenizer = VerseTokenizer()
+    private val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
+    private val lexicon = Lexicon.build(tokenized)
+
     @Test
     fun huffmanCompressLexiconTest() {
-        val verses = BibleCsvParser().readTranslation("kjv")
-        val tokenizer = VerseTokenizer()
-        val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
-        val lexicon = Lexicon.build(tokenized)
+        val (results, bytes) = writeHuffman(lexicon, tokenized)
 
-        val results: Map<String, Int> = writeHuffman(lexicon, tokenized)
         assertThat(results)
-            .containsEntry("lexiconHeaderBytes", 65)//down from 123
-            .containsEntry("lexiconBytes", 60924)
-            .containsEntry("textHeaderBytes", 129)//Down from 13600
+            .containsEntry("lexiconHeaderBytes", 64)//down from 123
+            .containsEntry("lexiconBytes", 60926)
+            .containsEntry("textHeaderBytes", 128)//Down from 13600
             .containsEntry("textBytes", 975112)
-            .containsEntry("totalBytes", 65 + 60924 + 129 + 975112)
+            .containsEntry("totalBytes", 64 + 60926 + 128 + 975112)
+        /*
+        If we sort the Lexicon alphabetically, we get:
+        Lexicon header: 65
+        Lexicon: 60924
+        Text Header: 9930 (vs 129)
+        Text Bytes: 975112
+        So if we can save more than 10kb in the Lexicon, then its worth it to sort alphabetically
+         */
+        readHuffman(bytes)
     }
 
-    private fun writeHuffman(lexicon: Lexicon, tokenized: List<TokenizedVerse>): Map<String, Int> {
+    @Test
+    fun huffmanCompressLowerCaseOnlyLexiconTest() {
+        val lower = tokenized.map {
+            TokenizedVerse(it.id, it.book, it.chapter, it.verse, it.tokens.map { t -> t.toLowerCase() })
+        }.toList()
+        val lowerLexicon = Lexicon.build(lower)
+        val (results, bytes) = writeHuffman(lowerLexicon, lower)
+
+        assertThat(results)
+            .containsEntry("lexiconHeaderBytes", 40)//down from 123
+            .containsEntry("lexiconBytes", 54323)
+            .containsEntry("textHeaderBytes", 123)//Down from 13600
+            .containsEntry("textBytes", 954227)
+            .containsEntry("totalBytes", 40 + 54323 + 123 + 954227)
+        readHuffman(bytes)
+    }
+
+    private fun readHuffman(bytes: ByteArray) {
+        val bais = ByteArrayInputStream(bytes)
+        val bis = BitInputStream(bais)
+        val lex = readHuffmanLexicon(bis)
+    }
+
+    private fun readHuffmanLexicon(bis: BitInputStream): Lexicon {
+        val canonCode = CanonicalCodeIO.read(bis)
+        val codeTree = canonCode.toCodeTree()
+
+        for (i in 0..127) {
+            try {
+                codeTree.getCode(i)
+            } catch (ex: Exception) {
+                continue
+            }
+            println("Decoded code for $i (${i.toChar()}): ${codeTree.getCode(i).joinToString("")}")
+        }
+
+        val totalWords = bis.readBits(16)
+        println("There should be $totalWords")
+        val decoder = HuffmanDecoder(bis, codeTree)
+        var currentWord = ""
+        val words = mutableListOf<String>()
+        while (words.size < totalWords) {
+            val characterCode = decoder.read()
+            if (characterCode == 0) {
+                words.add(currentWord)
+                currentWord = ""
+                //End of a word
+            } else {
+                currentWord += characterCode.toChar()
+            }
+        }
+
+        println(
+            "After finishing, we are left with ${words.size} words, starting with ${
+                words.subList(0, 10).joinToString(", ")
+            }"
+        )
+        return Lexicon.buildFromWordList(words)
+    }
+
+    private fun writeHuffman(lexicon: Lexicon, tokenized: List<TokenizedVerse>): Pair<Map<String, Int>, ByteArray> {
         val baos = ByteArrayOutputStream()
         val bos = BitOutputStream(baos)
         val stats = mutableMapOf<String, Int>().also {
@@ -32,8 +103,8 @@ class HuffmanTests {
             it.putAll(writeHuffmanText(bos, lexicon, tokenized))
         }
         bos.close()
-        stats.put("totalBytes", baos.toByteArray().size)
-        return stats
+        stats["totalBytes"] = baos.toByteArray().size
+        return stats to baos.toByteArray()
     }
 
     private fun writeHuffmanText(
@@ -55,7 +126,7 @@ class HuffmanTests {
 
         val encoder = HuffmanEncoder(out, freqs.buildCodeTree())
         val codeTableSize =
-            writeCanonicalCodeHeader(encoder.out, CanonicalCode(encoder.codeTree, freqs.getSymbolLimit()))
+            CanonicalCodeIO.write(CanonicalCode(encoder.codeTree, freqs.getSymbolLimit()), encoder.out)
 
         val distribution = IntArray(21)
         Arrays.fill(distribution, 0)
@@ -88,26 +159,43 @@ class HuffmanTests {
             }
             initFreqs[0]++
         }
+        initFreqs.forEachIndexed { index, i -> println("Index $index (${index.toChar()}): $i") }
 
         val freqs = FrequencyTable(initFreqs)
-        val encoder = HuffmanEncoder(out, freqs.buildCodeTree())
 
-        val codeTableSize =
-            writeCanonicalCodeHeader(encoder.out, CanonicalCode(encoder.codeTree, freqs.getSymbolLimit()))
+        val originalCodeTree = freqs.buildCodeTree()
+        val canonCode = CanonicalCode(originalCodeTree, freqs.getSymbolLimit())
+        val actualCodeTree = canonCode.toCodeTree()
+        val codeTableSize = CanonicalCodeIO.write(canonCode, out)
+
+
+        val encoder = HuffmanEncoder(out, actualCodeTree)
 
         var totalChars = 0
         val distribution = IntArray(21)
         Arrays.fill(distribution, 0)
+
         val bytesAtStart = encoder.out.bytesWritten
+        out.writeBits(lexicon.getTokens().size, 16)
+
+
+        for (i in 0..127) {
+            try {
+                actualCodeTree.getCode(i)
+            } catch (ex: Exception) {
+                continue
+            }
+            println("Code for $i (${i.toChar()}): ${actualCodeTree.getCode(i).joinToString("")}")
+        }
         lexicon.getTokens().forEach { token ->
             token.token.chars().forEach { char ->
                 totalChars++
-                distribution[encoder.codeTree.getCode(char).size]++
+                distribution[actualCodeTree.getCode(char).size]++
                 encoder.write(char)
             }
             totalChars++
             encoder.write(0)
-            val bits = encoder.codeTree.getCode(0)
+            val bits = actualCodeTree.getCode(0)
             distribution[bits.size]++
         }
         encoder.out.finishByte()
@@ -119,7 +207,4 @@ class HuffmanTests {
         )
     }
 
-    private fun writeCanonicalCodeHeader(out: BitOutputStream, canonCode: CanonicalCode): Int {
-        return CanonicalCodeIO.write(canonCode, out)
-    }
 }
