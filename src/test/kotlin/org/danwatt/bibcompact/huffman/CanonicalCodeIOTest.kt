@@ -34,7 +34,6 @@ class CanonicalCodeIOTest {
         val ot = originalCode.toCodeTree()
         val dt = decoded.toCodeTree()
         for (i in freqs.indices) {
-            //println("Code $i: expected ${ot.getCode(i).joinToString(",")} actual ${dt.getCode(i).joinToString(",")}")
             assertThat(ot.getCode(i)).isEqualTo(dt.getCode(i)).describedAs("Code number $i")
         }
     }
@@ -72,11 +71,6 @@ class CanonicalCodeIOTest {
         assertThat(baos.toByteArray().toHex())
             .startsWith("08000c")//0800 = 2048 codes, 12 bits for each code
             .endsWith("8041de00e078063fe018ff8063fe018ff8063fe018ff8063fe0187f0")
-        /*
-        Code 8, run 119:  11000 + 001110111 -> 1100(C)|0001(1)|1101(D)|11...
-        Code 7, run 7  :  10111 + 000000111 -> 11_10(E)|1110(E)|0000(0)|0111(7)|
-        c1dee07e3ff8ffe3ff8ffe3ff8ffe3ff87f0
-         */
         assertDecode(baos, originalCode, freqs)
     }
 }
