@@ -191,13 +191,14 @@ class Version1WriterTest {
             val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
             val lexicon = Lexicon.build(tokenized)
             val lexBytes = vw.writeLexicon(lexicon)
-
             val verseBytes = vw.writeVerseData(tokenized, lexicon)
 
             val lb = compress(LZMA, lexBytes)
             val vb = compress(LZMA, verseBytes)
+            val totalSize = 1 + vw.writeHeader(verses).size + lb.size + vb.size
 
-            println("Translation $trans: lex: ${lb.size} verse: ${vb.size}")
+            println("Translation $trans: lex: ${lb.size} verse: ${vb.size}. Total: ${totalSize}")
+
 
         }
 

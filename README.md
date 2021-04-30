@@ -34,7 +34,28 @@ This project's goal is to determine how it might be possible to accomplish that 
 been possible with the technology of the time, while at the same time comparing the results to more modern compression
 and search tools.
 
-What we know:
+
+## Work in progress stats
+
+| Compression          | Size    | Ratio   |
+|----------------------|---------|---------|
+| zpaq -m5             | 739407  | 16.682% |
+| bibcompact V1 + LZMA | 819766  | 18.494% |
+| bzip2 -9             | 993406  | 22.412% |
+| lzma -9              | 1048408 | 23.653% |
+| xz -9                | 1048616 | 23.658% |
+| 7z -mx9              | 1048710 | 23.660% |
+| bibcompact V2 (HUFF) | 1062154 | 23.963% |
+| zstd –ultra -22      | 1068137 | 24.099% |
+| rar -m5              | 1142360 | 25.773% |
+| bibcompact V1        | 1346800 | 30.386% | 
+| gzip -9              | 1385457 | 31.258% |
+| zip -9               | 1385595 | 31.261% |
+| lz4 -9               | 1596418 | 36.017% |
+| lzop -9              | 1611939 | 36.367% |
+| Uncompressed         | 4432375 | 100%    |
+
+## What we know:
 
 * Uncompressed and without any special encoding, the ASCII text of the KJV is approximately 4.3 MB.
 * The Franklin Electronics KJ-21 had 1.125 MB of memory, and had not only the text of the KJV in what appears to be a
@@ -165,22 +186,5 @@ Some additional optimizations:
     * [An analysis of the Gameboy ROM](https://toasters.rocks/king-james-bible/)
 * [Some statistics on the Bible](https://www.artbible.info/concordance/)
 
-## Current compression stats
 
-| Compression     | Size    | Ratio   |
-|-----------------|---------|---------|
-| zpaq -m5        | 739407  | 16.682% |
-| bibcompact LZMA | 819765  | 18.494% |
-| bzip2 -9        | 993406  | 22.412% |
-| bibcompact HUFF | 1037486 | 23.407% |
-| lzma -9         | 1048408 | 23.653% |
-| xz -9           | 1048616 | 23.658% |
-| 7z -mx9         | 1048710 | 23.660% |
-| zstd –ultra -22 | 1068137 | 24.099% |
-| rar -m5         | 1142360 | 25.773% |
-| gzip -9         | 1385457 | 31.258% |
-| zip -9          | 1385595 | 31.261% |
-| lz4 -9          | 1596418 | 36.017% |
-| lzop -9         | 1611939 | 36.367% |
-| Uncompressed    | 4432375 | 100%    |
 
