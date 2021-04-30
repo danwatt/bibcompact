@@ -11,19 +11,6 @@ class Version2Writer : BibWriter(2) {
 
     override fun writeHeader(verses: List<Verse>): ByteArray {
         val (books, chapterCounts, verseCounts) = countBookChapterAndVerse(verses)
-        val asIntArray = listOf(books.size) + chapterCounts + verseCounts
-        val freqs = IntArray((asIntArray.maxByOrNull { it } ?: 0)+1)
-        asIntArray.forEach { freqs[it]++ }
-        val baos = ByteArrayOutputStream()
-        val bis = BitOutputStream(baos)
-        val codeTree = writeHuffmanHeader(freqs,bis)
-        val encodder = HuffmanEncoder(bis,codeTree)
-        asIntArray.forEach {
-            encodder.write(it)
-        }
-        bis.close()
-        println("Encoded with huffman: ${baos.toByteArray().size}")
-
         return (listOf(books.size.toByte()) + chapterCounts + verseCounts).map { it.toByte() }.toByteArray()
     }
 
@@ -44,11 +31,11 @@ class Version2Writer : BibWriter(2) {
             }
         }
 
-        val baos = ByteArrayOutputStream()
-        val bitOut = BitOutputStream(baos)
-        val codeTree = writeHuffmanHeader(tokenFreqs, bitOut)
+        val byteOutput = ByteArrayOutputStream()
+        val bitOutput = BitOutputStream(byteOutput)
+        val codeTree = writeHuffmanHeader(tokenFreqs, bitOutput)
 
-        val encoder = HuffmanEncoder(bitOut, codeTree)
+        val encoder = HuffmanEncoder(bitOutput, codeTree)
 
         tokenized.forEach { verse ->
             verse.tokens.forEach { token ->
@@ -59,8 +46,8 @@ class Version2Writer : BibWriter(2) {
             encoder.write(endOfVerseMarker)
         }
         encoder.out.finishByte()
-        bitOut.close()
-        return baos.toByteArray()
+        bitOutput.close()
+        return byteOutput.toByteArray()
     }
 
     override fun writeLexicon(lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
@@ -75,13 +62,13 @@ class Version2Writer : BibWriter(2) {
             }
             initFreqs[0]++
         }
-        val baos = ByteArrayOutputStream()
-        val out = BitOutputStream(baos)
-        val actualCodeTree = writeHuffmanHeader(initFreqs, out)
-        val encoder = HuffmanEncoder(out, actualCodeTree)
+        val byteOutput = ByteArrayOutputStream()
+        val bitOutput = BitOutputStream(byteOutput)
+        val actualCodeTree = writeHuffmanHeader(initFreqs, bitOutput)
+        val encoder = HuffmanEncoder(bitOutput, actualCodeTree)
         var totalChars = 0
 
-        out.writeBits(lexicon.getTokens().size, 16)
+        bitOutput.writeBits(lexicon.getTokens().size, 16)
 
         lexicon.getTokens().forEach { token ->
             token.token.chars().forEach { char ->
@@ -93,20 +80,20 @@ class Version2Writer : BibWriter(2) {
             val bits = actualCodeTree.getCode(0)
         }
         encoder.out.finishByte()
-        out.close()
+        bitOutput.close()
 
-        return baos.toByteArray()
+        return byteOutput.toByteArray()
     }
 
     private fun writeHuffmanHeader(
         initFreqs: IntArray,
-        out: BitOutputStream
+        bitOutput: BitOutputStream
     ): CodeTree {
         val frequencies = FrequencyTable(initFreqs)
         val originalCodeTree = frequencies.buildCodeTree()
         val canonCode = CanonicalCode(originalCodeTree, frequencies.getSymbolLimit())
 
-        CanonicalCodeIO.write(canonCode, out)
+        CanonicalCodeIO.write(canonCode, bitOutput)
 
         return canonCode.toCodeTree()
     }

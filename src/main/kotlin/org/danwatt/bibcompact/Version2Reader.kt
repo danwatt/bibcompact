@@ -12,9 +12,9 @@ class Version2Reader : BibReader(2) {
         lexicon: Lexicon<TokenOnlyEntry>
     ): List<Verse> {
         val endOfVerseMarker = lexicon.getTokens().size
-        val bis = BitInputStream(input)
-        val codeTree = CanonicalCodeIO.read(bis).toCodeTree()
-        val decoder = HuffmanDecoder(bis, codeTree)
+        val bitInput = BitInputStream(input)
+        val codeTree = CanonicalCodeIO.read(bitInput).toCodeTree()
+        val decoder = HuffmanDecoder(bitInput, codeTree)
         var counter = 1
         val verses = mutableListOf<Verse>()
         for (b in counts.indices) {
@@ -37,11 +37,11 @@ class Version2Reader : BibReader(2) {
     }
 
     override fun readLexicon(inputStream: InputStream): Lexicon<TokenOnlyEntry> {
-        val bis = BitInputStream(inputStream)
-        val codeTree = CanonicalCodeIO.read(bis).toCodeTree()
+        val bitInput = BitInputStream(inputStream)
+        val codeTree = CanonicalCodeIO.read(bitInput).toCodeTree()
 
-        val totalWords = bis.readBits(16)
-        val decoder = HuffmanDecoder(bis, codeTree)
+        val totalWords = bitInput.readBits(16)
+        val decoder = HuffmanDecoder(bitInput, codeTree)
         var currentWord = ""
         val words = mutableListOf<String>()
         while (words.size < totalWords) {
@@ -54,7 +54,7 @@ class Version2Reader : BibReader(2) {
                 currentWord += characterCode.toChar()
             }
         }
-        bis.finishByte()
+        bitInput.finishByte()
 
         return Lexicon.buildFromWordList(words)
     }
