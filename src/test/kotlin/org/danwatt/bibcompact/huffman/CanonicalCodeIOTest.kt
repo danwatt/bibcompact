@@ -18,8 +18,8 @@ class CanonicalCodeIOTest {
         CanonicalCodeIO.write(originalCode, bitOut)
         bitOut.close()
         assertThat(baos.toByteArray().toHex())
-            .startsWith("000402")
-            .endsWith("ff50")//111 111 110 101 -> 1111 1111 0101 |0000
+            .startsWith("000403")
+            .endsWith("bba9")
 
         assertDecode(baos, originalCode, freqs)
     }
@@ -51,8 +51,8 @@ class CanonicalCodeIOTest {
         bitOut.close()
         //7, 127 times
         assertThat(baos.toByteArray().toHex())
-            .startsWith("008003")
-            .endsWith("f3f8")//1111 0011 1111 1|000
+            .startsWith("008007")
+            .endsWith("873f80")
         assertDecode(baos, originalCode, freqs)
     }
 
@@ -68,10 +68,10 @@ class CanonicalCodeIOTest {
         CanonicalCodeIO.write(originalCode, bitOut)
         bitOut.close()
         //7, 127 times
-        assertThat(baos.size()).isEqualTo(21)
+        assertThat(baos.size()).isEqualTo(31)
         assertThat(baos.toByteArray().toHex())
-            .startsWith("080004")//0800 = 2048 codes, 4 bits for each code
-            .endsWith("c1dee07e3ff8ffe3ff8ffe3ff8ffe3ff87f0")
+            .startsWith("08000c")//0800 = 2048 codes, 12 bits for each code
+            .endsWith("8041de00e078063fe018ff8063fe018ff8063fe018ff8063fe0187f0")
         /*
         Code 8, run 119:  11000 + 001110111 -> 1100(C)|0001(1)|1101(D)|11...
         Code 7, run 7  :  10111 + 000000111 -> 11_10(E)|1110(E)|0000(0)|0111(7)|

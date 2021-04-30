@@ -1,65 +1,28 @@
 package org.danwatt.bibcompact
 
+import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.lang.IllegalArgumentException
 import java.nio.ByteBuffer
 
-class Version1Writer {
+class Version1Writer : BibWriter(1){
 
-    fun write(verses: List<Verse>, out: OutputStream): Map<String, Int> {
-        out.write(1)
-        val headerByteArray = writeHeader(verses)
-        out.write(headerByteArray)
-
-        val tokenizer = VerseTokenizer()
-        val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
-        val lexicon = Lexicon.build(tokenized)
-        val lexBytes = writeLexicon(lexicon)
-        out.write(lexBytes)
-
-        val textByteCount = writeVerseData(tokenized, lexicon, out)
-        out.flush()
-
-        return mapOf(
-            "headerBytes" to headerByteArray.size,
-            "lexiconBytes" to lexBytes.size,
-            "textBytes" to textByteCount,
-            "tokens" to lexicon.getTokens().size
-        )
-    }
-
-    fun writeVerseData(
+    override fun writeVerseData(
         tokenized: List<TokenizedVerse>,
-        lexicon: Lexicon<VerseStatsLexiconEntry>,
-        out: OutputStream
-    ): Int {
+        lexicon: Lexicon<VerseStatsLexiconEntry>
+    ): ByteArray {
         var textByteCount = 0
+        val out = ByteArrayOutputStream()
 
         tokenized.forEach {
             val verseBytes = writeVerse(it, lexicon)
             textByteCount += verseBytes.size
             out.write(verseBytes)
         }
-        return textByteCount
+        return out.toByteArray()
     }
 
-    fun writeHeader(verses: List<Verse>): ByteArray {
-        val books = verses.map { it.book }.distinct()
-        val chapterCounts = mutableListOf<Byte>()
-        val verseCounts = mutableListOf<Byte>()
-        books.forEach { bookNumber ->
-            val chaps = verses.filter { it.book == bookNumber }.map { it.chapter }.distinct()
-            chapterCounts.add(chaps.size.toByte())
-            chaps.forEach { chapterNumber ->
-                val numVerses = verses.filter { it.book == bookNumber && it.chapter == chapterNumber }.size.toByte()
-                verseCounts.add(numVerses)
-            }
-        }
-
-        return (listOf(books.size.toByte()) + chapterCounts + verseCounts).toByteArray()
-    }
-
-    fun writeLexicon(lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
+    override fun writeLexicon(lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
         val allTokens = lexicon.getTokens()
         val numTokens = allTokens.size
         val bytesNeeded = 2 + numTokens + allTokens.map { it.token.length }.sum()

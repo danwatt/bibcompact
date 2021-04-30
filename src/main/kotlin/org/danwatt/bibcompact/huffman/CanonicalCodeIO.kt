@@ -14,7 +14,7 @@ object CanonicalCodeIO {
             val length = code.getCodeLength(i)
             if (length >= 256) throw RuntimeException("The code for a symbol is too long")
             codeLengths[i] = length
-            bitsNeededToWrite = max(bitsNeededToWrite, ceil(log2(length.toFloat())).toInt())
+            bitsNeededToWrite = max(bitsNeededToWrite, length)
         }
         out.writeBits(numCodes, 16)
         out.writeBits(bitsNeededToWrite, 8)

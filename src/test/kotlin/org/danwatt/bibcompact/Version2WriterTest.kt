@@ -8,7 +8,7 @@ import org.apache.commons.compress.compressors.CompressorStreamFactory
 import org.apache.commons.compress.compressors.CompressorStreamFactory.*
 
 
-class Version1WriterTest {
+class Version2WriterTest {
 
     @Test
     fun testTokenWriting() {
@@ -25,19 +25,10 @@ class Version1WriterTest {
         val tokens = mostFrequent + filler + rare
         val lexicon = Lexicon(tokens)
 
-        val writer = Version1Writer()
+        val writer = Version2Writer()
         val verse = TokenizedVerse(1, 1, 1, 1, listOf("First", "Second", "2", "3", "rare", "rare-er", "rare-est"))
-        val bytes = writer.writeVerse(verse, lexicon)
-        assertThat(bytes.toHex()).isEqualTo(
-            "07" +//7 tokens
-                    "00" +//"First", offset 0
-                    "01" +//"Second", offset 1
-                    "02" +//"2", offset 2
-                    "03" +//"3", offset 3
-                    "8001" +//"rare", offset 128
-                    "8101" +//"rare-er", offset 129
-                    "8201" //"rare-est", offset 130
-        )
+        val bytes = writer.writeVerseData(listOf(verse), lexicon)
+        assertThat(bytes.toHex()).isEqualTo("008403bbbb83ddddd8053977")
     }
 
     @Test
@@ -49,26 +40,10 @@ class Version1WriterTest {
             )
         )
 
-        val dw = Version1Writer()
+        val dw = Version2Writer()
         val bytes = dw.writeLexicon(lex)
 
-        assertThat(bytes.toHex()).isEqualTo("0002546573740076616c756500")
-
-        assertThat(bytes).containsSequence(
-            0x00,
-            0x02,
-            'T'.toByte(),
-            'e'.toByte(),
-            's'.toByte(),
-            't'.toByte(),
-            0x00,
-            'v'.toByte(),
-            'a'.toByte(),
-            'l'.toByte(),
-            'u'.toByte(),
-            'e'.toByte(),
-            0x00
-        )
+        assertThat(bytes.toHex()).isEqualTo("0077049c0a54802e908427002ce005980c0002e2e0dea900")
     }
 
     @Test
@@ -103,39 +78,40 @@ class Version1WriterTest {
             Verse(5, 2, 1, 1, "Book 2 Chapter 1 Verse 1"),
             Verse(6, 2, 1, 2, "Book 2 Chapter 1 Verse 2"),
         )
-        val vw = Version1Writer()
+        val vw = Version2Writer()
         val baos = ByteArrayOutputStream()
         val stats = vw.write(verses, baos)
         baos.close()
 
         assertThat(stats)
             .containsEntry("headerBytes", 6)
-            .containsEntry("lexiconBytes", 27)
-            .containsEntry("textBytes", 42)
+            .containsEntry("lexiconBytes", 44)
+            .containsEntry("textBytes", 23)
             .containsEntry("tokens", 6)
 
+        //
         assertThat(baos.toByteArray().toHex()).isEqualTo(
-            "01" + //Version number
-                    "020201030102" +//Header
-                    "00063100426f6f6b00436861707465720056657273650032003300" +//Lexicon
-                    "060100020003000601000200030406010002000305060100020403000601040200030006010402000304"//Tokens
+            "02" + //Version number
+                    "020201030102" +//Book/Chapter/Verse header
+                    "0075058a017ca02801b2cb0046580132c0028e082582096001492c11c9200006b1988f1aef3f499b4e517300" +//Lexicon
+                    "00070494e73a52408530c29b98537b0bd867530cea6e40"//Text
         )
     }
 
     @Test
     fun kjvTest() {
         val verses = BibleCsvParser().readTranslation("kjv")
-        val vw = Version1Writer()
+        val vw = Version2Writer()
         val baos = ByteArrayOutputStream()
         val stats = vw.write(verses, baos)
         baos.close()
         assertThat(stats)
             .containsEntry("headerBytes", 1256)
-            .containsEntry("lexiconBytes", 109035)
-            .containsEntry("textBytes", 1236508)
+            .containsEntry("lexiconBytes", 61085)
+            .containsEntry("textBytes", 999812)
             .containsEntry("tokens", 13600)
         val rawByte = baos.toByteArray()
-        assertThat(rawByte).hasSize(1346800)
+        assertThat(rawByte).hasSize(1_062_154)//SO close to 1,048,576 (1MB) - 13,578 bytes
 
         val fw = FileOutputStream("/tmp/kjv.out")
         fw.write(rawByte)
@@ -143,49 +119,11 @@ class Version1WriterTest {
     }
 
     @Test
-    fun compressParts() {
-        val verses = BibleCsvParser().readTranslation("kjv")
-        val vw = Version1Writer()
-
-        val tokenizer = VerseTokenizer()
-        val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
-        val lexicon = Lexicon.build(tokenized)
-        val headerBytes = vw.writeHeader(verses)
-        val lexBytes = vw.writeLexicon(lexicon)
-
-
-        val verseBytes = vw.writeVerseData(tokenized, lexicon)
-
-        val algorithms = setOf(
-            GZIP,
-            XZ,
-            BZIP2,
-            DEFLATE,
-            LZMA
-        )
-
-        val compressionResults: Map<String, Pair<Int, Int>> = algorithms.map { algo ->
-            val lb = compress(algo, lexBytes)
-            val vb = compress(algo, verseBytes)
-
-            println("Compressing the header with $algo: ${compress(algo, headerBytes).size}")
-
-            Triple(algo, lb.size, vb.size)
-        }.associateBy { it.first }.mapValues { it.value.second to it.value.third }
-
-        assertThat(compressionResults).containsEntry(GZIP, 49739 to 861500)
-        assertThat(compressionResults).containsEntry(DEFLATE, 49727 to 861488)
-        assertThat(compressionResults).containsEntry(BZIP2, 45065 to 806230)
-        assertThat(compressionResults).containsEntry(XZ, 43856 to 774900)
-        assertThat(compressionResults).containsEntry(LZMA, 43786 to 774723)
-    }
-
-    @Test
     fun lzmaTranslations() {
         val translations = setOf("asv", "bbe", "kjv", "web", "ylt")
         translations.forEach { trans ->
             val verses = BibleCsvParser().readTranslation(trans)
-            val vw = Version1Writer()
+            val vw = Version2Writer()
 
             val tokenizer = VerseTokenizer()
             val tokenized = verses.map { tokenizer.tokenize(it) }.toList()

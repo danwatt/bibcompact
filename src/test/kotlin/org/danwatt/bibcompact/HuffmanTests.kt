@@ -19,11 +19,11 @@ class HuffmanTests {
         val (results, bytes) = writeHuffman(lexicon, tokenized)
 
         assertThat(results)
-            .containsEntry("lexiconHeaderBytes", 64)//down from 123
+            .containsEntry("lexiconHeaderBytes", 159)
             .containsEntry("lexiconBytes", 60926)
-            .containsEntry("textHeaderBytes", 128)//Down from 13600
+            .containsEntry("textHeaderBytes", 256)//Down from 13600
             .containsEntry("textBytes", 975112)
-            .containsEntry("totalBytes", 64 + 60926 + 128 + 975112)
+            .containsEntry("totalBytes", 159 + 60926 + 256 + 975112)
         /*
         If we sort the Lexicon alphabetically, we get:
         Lexicon header: 65
@@ -44,11 +44,11 @@ class HuffmanTests {
         val (results, bytes) = writeHuffman(lowerLexicon, lower)
 
         assertThat(results)
-            .containsEntry("lexiconHeaderBytes", 40)//down from 123
+            .containsEntry("lexiconHeaderBytes", 93)//down from 123
             .containsEntry("lexiconBytes", 54323)
-            .containsEntry("textHeaderBytes", 123)//Down from 13600
+            .containsEntry("textHeaderBytes", 246)//Down from 13600
             .containsEntry("textBytes", 954227)
-            .containsEntry("totalBytes", 40 + 54323 + 123 + 954227)
+            .containsEntry("totalBytes", 93 + 54323 + 246 + 954227)
         readHuffman(bytes)
     }
 

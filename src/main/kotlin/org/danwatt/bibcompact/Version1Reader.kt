@@ -1,20 +1,10 @@
 package org.danwatt.bibcompact
 
 import java.io.InputStream
-import java.lang.IllegalArgumentException
 
-class Version1Reader {
-    fun read(input: InputStream): List<Verse> {
-        val versionNumber = input.read()
-        if (versionNumber != 1) {
-            throw IllegalArgumentException("Bad version number encountered, expected 1 but was $versionNumber")
-        }
-        val counts = readHeader(input)
-        val lex = readLexicon(input)
-        return readVerses(input, counts, lex)
-    }
+class Version1Reader : BibReader(1) {
 
-    private fun readVerses(input: InputStream, counts: List<List<Int>>, lex: Lexicon<VerseStatsLexiconEntry>): List<Verse> {
+    override fun readVerses(input: InputStream, counts: List<List<Int>>, lex: Lexicon<TokenOnlyEntry>): List<Verse> {
         var counter = 1
         val verses = mutableListOf<Verse>()
         for (b in counts.indices) {
@@ -23,22 +13,9 @@ class Version1Reader {
                     val numTokens = input.read()
                     val tokens = mutableListOf<String>()
                     for (t in 0 until numTokens) {
-                        val tokenNumber = input.readVarByteInt()
-                        tokens.add(lex.getTokens()[tokenNumber].token)
+                        tokens.add(lex.getTokens()[input.readVarByteInt()].token)
                     }
-                    val joined = tokens.joinToString(" ")
-                        .replace(" ' s ", "'s ")
-                        .replace(" ( ", " (")
-                        .replace("( ","(")
-                        .replace(Regex(" ([).,;:!?'\"])"), "$1")
-                    val verse = Verse(
-                        id = (b + 1) * 1000000 + (c + 1) * 1000 + (v + 1),
-                        book = b + 1,
-                        chapter = c + 1,
-                        verse = v + 1,
-                        text = joined
-                    )
-                    verses.add(verse)
+                    verses.add(applyEnglishLanguageFixesAndBuildVerse(tokens, b, c, v))
                     counter++
                 }
             }
@@ -46,33 +23,9 @@ class Version1Reader {
         return verses
     }
 
-    fun readHeader(inputStream: InputStream): List<List<Int>> {
-        var headerBytesRead = 0
-        val r = mutableListOf<List<Int>>()
-        val bookCount = inputStream.read()
-        println("There should be $bookCount books")
-        headerBytesRead++
-        val bookChapterCounts = mutableListOf<Int>()
-        for (i in 0 until bookCount) {
-            val chapters = inputStream.readNBytes(1)[0].toPositiveInt()
-            headerBytesRead++
-            bookChapterCounts.add(chapters)
-        }
-        for (b in 0 until bookCount) {
-            val verseCount = mutableListOf<Int>()
-            for (c in 0 until bookChapterCounts[b]) {
-                val v = inputStream.readNBytes(1)[0].toPositiveInt()
-                verseCount.add(v)
-                headerBytesRead++
-            }
-            r.add(verseCount)
-        }
-        return r
-    }
-
-    fun readLexicon(inputStream: InputStream): Lexicon<VerseStatsLexiconEntry> {
+    override fun readLexicon(inputStream: InputStream): Lexicon<TokenOnlyEntry> {
         val numTokens = inputStream.readInt()
-        val tokens = mutableListOf<VerseStatsLexiconEntry>()
+        val tokens = mutableListOf<TokenOnlyEntry>()
 
         for (t in 0 until numTokens) {
             var c: Int = -1
@@ -82,7 +35,7 @@ class Version1Reader {
                 if (c != 0) {
                     currentToken.append(c.toChar())
                 } else {
-                    tokens.add(VerseStatsLexiconEntry(token = currentToken.toString(), firstVerse = 0, lastVerse = 0))
+                    tokens.add(TokenOnlyEntry(token = currentToken.toString()))
                 }
             }
         }
