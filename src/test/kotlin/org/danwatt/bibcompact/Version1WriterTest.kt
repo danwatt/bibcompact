@@ -104,9 +104,9 @@ class Version1WriterTest {
             Verse(6, 2, 1, 2, "Book 2 Chapter 1 Verse 2"),
         )
         val vw = Version1Writer()
-        val baos = ByteArrayOutputStream()
-        val stats = vw.write(verses, baos)
-        baos.close()
+        val byteOutput = ByteArrayOutputStream()
+        val stats = vw.write(verses, byteOutput)
+        byteOutput.close()
 
         assertThat(stats)
             .containsEntry("headerBytes", 6)
@@ -114,7 +114,7 @@ class Version1WriterTest {
             .containsEntry("textBytes", 42)
             .containsEntry("tokens", 6)
 
-        assertThat(baos.toByteArray().toHex()).isEqualTo(
+        assertThat(byteOutput.toByteArray().toHex()).isEqualTo(
             "01" + //Version number
                     "020201030102" +//Header
                     "00063100426f6f6b00436861707465720056657273650032003300" +//Lexicon
@@ -126,15 +126,15 @@ class Version1WriterTest {
     fun kjvTest() {
         val verses = BibleCsvParser().readTranslation("kjv")
         val vw = Version1Writer()
-        val baos = ByteArrayOutputStream()
-        val stats = vw.write(verses, baos)
-        baos.close()
+        val byteOutput = ByteArrayOutputStream()
+        val stats = vw.write(verses, byteOutput)
+        byteOutput.close()
         assertThat(stats)
             .containsEntry("headerBytes", 1256)
             .containsEntry("lexiconBytes", 109035)
             .containsEntry("textBytes", 1236508)
             .containsEntry("tokens", 13600)
-        val rawByte = baos.toByteArray()
+        val rawByte = byteOutput.toByteArray()
         assertThat(rawByte).hasSize(1346800)
 
         val fw = FileOutputStream("/tmp/kjv-v1.out")

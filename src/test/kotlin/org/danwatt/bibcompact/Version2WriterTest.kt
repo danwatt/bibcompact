@@ -4,8 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
-import org.apache.commons.compress.compressors.CompressorStreamFactory
-import org.apache.commons.compress.compressors.CompressorStreamFactory.*
 
 
 class Version2WriterTest {
@@ -79,9 +77,9 @@ class Version2WriterTest {
             Verse(6, 2, 1, 2, "Book 2 Chapter 1 Verse 2"),
         )
         val vw = Version2Writer()
-        val baos = ByteArrayOutputStream()
-        val stats = vw.write(verses, baos)
-        baos.close()
+        val byteOutput = ByteArrayOutputStream()
+        val stats = vw.write(verses, byteOutput)
+        byteOutput.close()
 
         assertThat(stats)
             .containsEntry("headerBytes", 6)
@@ -90,7 +88,7 @@ class Version2WriterTest {
             .containsEntry("tokens", 6)
 
         //
-        assertThat(baos.toByteArray().toHex()).isEqualTo(
+        assertThat(byteOutput.toByteArray().toHex()).isEqualTo(
             "02" + //Version number
                     "020201030102" +//Book/Chapter/Verse header
                     "0075058a017ca02801b2cb0046580132c0028e082582096001492c11c9200006b1988f1aef3f499b4e517300" +//Lexicon
@@ -102,56 +100,20 @@ class Version2WriterTest {
     fun kjvTest() {
         val verses = BibleCsvParser().readTranslation("kjv")
         val vw = Version2Writer()
-        val baos = ByteArrayOutputStream()
-        val stats = vw.write(verses, baos)
-        baos.close()
+        val byteOutput = ByteArrayOutputStream()
+        val stats = vw.write(verses, byteOutput)
+        byteOutput.close()
         assertThat(stats)
             .containsEntry("headerBytes", 1256)
             .containsEntry("lexiconBytes", 61085)
             .containsEntry("textBytes", 999812)
             .containsEntry("tokens", 13600)
-        val rawByte = baos.toByteArray()
+        val rawByte = byteOutput.toByteArray()
         assertThat(rawByte).hasSize(1_062_154)//SO close to 1,048,576 (1MB) - 13,578 bytes
 
         val fw = FileOutputStream("/tmp/kjv-v2.out")
         fw.write(rawByte)
         fw.close()
-    }
-
-    @Test
-    fun lzmaTranslations() {
-        val translations = setOf("asv", "bbe", "kjv", "web", "ylt")
-        translations.forEach { trans ->
-            val verses = BibleCsvParser().readTranslation(trans)
-            val vw = Version2Writer()
-
-            val tokenizer = VerseTokenizer()
-            val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
-            val lexicon = Lexicon.build(tokenized)
-            val lexBytes = vw.writeLexicon(lexicon)
-
-            val verseBytes = vw.writeVerseData(tokenized, lexicon)
-
-            val lb = compress(LZMA, lexBytes)
-            val vb = compress(LZMA, verseBytes)
-
-            val totalSize = 1 + vw.writeHeader(verses).size + lb.size + vb.size
-
-            println("Translation $trans: lex: ${lb.size} verse: ${vb.size}. Total: ${totalSize}")
-
-        }
-
-    }
-
-    companion object {
-        fun compress(algo: String, lexBytes: ByteArray): ByteArray {
-            val b = ByteArrayOutputStream()
-            val out = CompressorStreamFactory(true, 1000).createCompressorOutputStream(algo, b)
-            out.write(lexBytes)
-            out.flush()
-            out.close()
-            return b.toByteArray()
-        }
     }
 }
 

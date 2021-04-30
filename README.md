@@ -34,6 +34,11 @@ This project's goal is to determine how it might be possible to accomplish that 
 been possible with the technology of the time, while at the same time comparing the results to more modern compression
 and search tools.
 
+## Works in progress
+
+* Version 1 : Encode all words into the lexicon, then reference the lexicon with variable-width integer lookups
+* Version 2 : Encode the lexicon using Huffman codes, then separately encode the integer lookups using Huffman codes
+* Version 3 : (WIP) Encode the lexicon using a prefix tree / trie, continue encoding integer lookups using Huffman codes
 
 ## Work in progress stats
 
@@ -182,7 +187,7 @@ Some additional optimizations:
 * [Hutter prize in compression:](https://en.wikipedia.org/wiki/Hutter_Prize)
 * [Stop words in Lucene](https://github.com/apache/lucene-solr/blob/master/lucene/analysis/common/src/java/org/apache/lucene/analysis/en/EnglishAnalyzer.java#L46)
 * [Other Bible links](https://hackathon.bible/data/)
-* [Unlicensed Gameboy Bible ROM](https://wowroms.com/en/roms/nintendo-gameboy/king-james-bible-usa-unl/9499.html)
+* [Unlicensed Gameboy Bible ROM (for size comparison)](https://wowroms.com/en/roms/nintendo-gameboy/king-james-bible-usa-unl/9499.html)
     * [An analysis of the Gameboy ROM](https://toasters.rocks/king-james-bible/)
 * [Some statistics on the Bible](https://www.artbible.info/concordance/)
 

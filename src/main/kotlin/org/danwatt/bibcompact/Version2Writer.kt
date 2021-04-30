@@ -15,21 +15,18 @@ class Version2Writer : BibWriter(2) {
     }
 
     override fun writeVerseData(
-        tokenized: List<TokenizedVerse>,
+        verses: List<TokenizedVerse>,
         lexicon: Lexicon<VerseStatsLexiconEntry>
     ): ByteArray {
         val endOfVerseMarker = lexicon.getTokens().size
         val tokenFreqs = IntArray(lexicon.getTokens().size + 1)
-
         Arrays.fill(tokenFreqs, 0)
-        tokenFreqs[tokenFreqs.size - 1] = tokenized.size
-        tokenized.forEach { verse ->
-            verse.tokens.forEach { token ->
-                val lexiconIndex = lexicon.getLookupValue(token)
-                    ?: throw IllegalArgumentException("Unknown token $token")
-                tokenFreqs[lexiconIndex]++
-            }
-        }
+        val tokens: List<Int> = verses.asSequence().flatMap { verse ->
+            verse.tokens.map { token ->
+                lexicon.getLookupValue(token) ?: throw IllegalArgumentException("Unknown token $token")
+            }.toList() + listOf(endOfVerseMarker)
+        }.toList()
+        tokens.forEach { tokenFreqs[it]++ }
 
         val byteOutput = ByteArrayOutputStream()
         val bitOutput = BitOutputStream(byteOutput)
@@ -37,14 +34,8 @@ class Version2Writer : BibWriter(2) {
 
         val encoder = HuffmanEncoder(bitOutput, codeTree)
 
-        tokenized.forEach { verse ->
-            verse.tokens.forEach { token ->
-                val position = lexicon.getLookupValue(token) ?: throw IllegalArgumentException("Unknown token $token")
-                encoder.write(position)
-            }
+        tokens.forEach { encoder.write(it) }
 
-            encoder.write(endOfVerseMarker)
-        }
         encoder.out.finishByte()
         bitOutput.close()
         return byteOutput.toByteArray()
