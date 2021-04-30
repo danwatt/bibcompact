@@ -58,7 +58,7 @@ class HuffmanTests {
         val lex = readHuffmanLexicon(bis)
     }
 
-    private fun readHuffmanLexicon(bis: BitInputStream): Lexicon {
+    private fun readHuffmanLexicon(bis: BitInputStream): Lexicon<TokenOnlyEntry> {
         val canonCode = CanonicalCodeIO.read(bis)
         val codeTree = canonCode.toCodeTree()
 
@@ -95,7 +95,7 @@ class HuffmanTests {
         return Lexicon.buildFromWordList(words)
     }
 
-    private fun writeHuffman(lexicon: Lexicon, tokenized: List<TokenizedVerse>): Pair<Map<String, Int>, ByteArray> {
+    private fun writeHuffman(lexicon: Lexicon<VerseStatsLexiconEntry>, tokenized: List<TokenizedVerse>): Pair<Map<String, Int>, ByteArray> {
         val baos = ByteArrayOutputStream()
         val bos = BitOutputStream(baos)
         val stats = mutableMapOf<String, Int>().also {
@@ -109,7 +109,7 @@ class HuffmanTests {
 
     private fun writeHuffmanText(
         out: BitOutputStream,
-        lexicon: Lexicon,
+        lexicon: Lexicon<VerseStatsLexiconEntry>,
         tokenized: List<TokenizedVerse>
     ): Map<String, Int> {
         val tokenFreqs = IntArray(lexicon.getTokens().size)
@@ -147,7 +147,7 @@ class HuffmanTests {
         )
     }
 
-    private fun writeHuffmanLexicon(out: BitOutputStream, lexicon: Lexicon): Map<String, Int> {
+    private fun writeHuffmanLexicon(out: BitOutputStream, lexicon: Lexicon<VerseStatsLexiconEntry>): Map<String, Int> {
         val highestCharacterCode = lexicon.getTokens().asSequence()
             .flatMap { it.token.toCharArray().asSequence() }
             .maxByOrNull { it }!!

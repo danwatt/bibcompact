@@ -16,6 +16,10 @@ class TrieTest {
     private val tokenizer = VerseTokenizer()
     private val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
 
+    /*
+    we
+     */
+
     private val END_CODE = 0
     private val PUSH_CODE = 1
     private val POP_CODE = 2

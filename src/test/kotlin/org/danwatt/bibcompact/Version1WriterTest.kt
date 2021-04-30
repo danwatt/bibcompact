@@ -1,6 +1,5 @@
 package org.danwatt.bibcompact
 
-import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import java.io.ByteArrayOutputStream
@@ -13,15 +12,15 @@ class Version1WriterTest {
 
     @Test
     fun testTokenWriting() {
-        val filler = (2..127).map { LexiconEntry(it.toString(), it, it, 5) }
+        val filler = (2..127).map { VerseStatsLexiconEntry(it.toString(), it, it, 5) }
         val mostFrequent = listOf(
-            LexiconEntry("First", 1, 1, 100),
-            LexiconEntry("Second", 2, 2, 50)
+            VerseStatsLexiconEntry("First", 1, 1, 100),
+            VerseStatsLexiconEntry("Second", 2, 2, 50)
         )
         val rare = listOf(
-            LexiconEntry("rare", 1, 1, 3),
-            LexiconEntry("rare-er", 2, 2, 2),
-            LexiconEntry("rare-est", 3, 3, 1)
+            VerseStatsLexiconEntry("rare", 1, 1, 3),
+            VerseStatsLexiconEntry("rare-er", 2, 2, 2),
+            VerseStatsLexiconEntry("rare-est", 3, 3, 1)
         )
         val tokens = mostFrequent + filler + rare
         val lexicon = Lexicon(tokens)

@@ -30,7 +30,7 @@ class Version1Writer {
 
     fun writeVerseData(
         tokenized: List<TokenizedVerse>,
-        lexicon: Lexicon,
+        lexicon: Lexicon<VerseStatsLexiconEntry>,
         out: OutputStream
     ): Int {
         var textByteCount = 0
@@ -59,7 +59,7 @@ class Version1Writer {
         return (listOf(books.size.toByte()) + chapterCounts + verseCounts).toByteArray()
     }
 
-    fun writeLexicon(lexicon: Lexicon): ByteArray {
+    fun writeLexicon(lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
         val allTokens = lexicon.getTokens()
         val numTokens = allTokens.size
         val bytesNeeded = 2 + numTokens + allTokens.map { it.token.length }.sum()
@@ -79,7 +79,7 @@ class Version1Writer {
     }
 
 
-    fun writeVerse(verse: TokenizedVerse, lexicon: Lexicon): ByteArray {
+    fun writeVerse(verse: TokenizedVerse, lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
         val bytes = mutableListOf<Byte>()
         bytes.add(verse.tokens.size.toByte())
         verse.tokens.forEach { token ->

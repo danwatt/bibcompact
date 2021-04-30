@@ -14,7 +14,7 @@ class Version1Reader {
         return readVerses(input, counts, lex)
     }
 
-    private fun readVerses(input: InputStream, counts: List<List<Int>>, lex: Lexicon): List<Verse> {
+    private fun readVerses(input: InputStream, counts: List<List<Int>>, lex: Lexicon<VerseStatsLexiconEntry>): List<Verse> {
         var counter = 1
         val verses = mutableListOf<Verse>()
         for (b in counts.indices) {
@@ -70,9 +70,9 @@ class Version1Reader {
         return r
     }
 
-    fun readLexicon(inputStream: InputStream): Lexicon {
+    fun readLexicon(inputStream: InputStream): Lexicon<VerseStatsLexiconEntry> {
         val numTokens = inputStream.readInt()
-        val tokens = mutableListOf<LexiconEntry>()
+        val tokens = mutableListOf<VerseStatsLexiconEntry>()
 
         for (t in 0 until numTokens) {
             var c: Int = -1
@@ -82,7 +82,7 @@ class Version1Reader {
                 if (c != 0) {
                     currentToken.append(c.toChar())
                 } else {
-                    tokens.add(LexiconEntry(token = currentToken.toString(), firstVerse = 0, lastVerse = 0))
+                    tokens.add(VerseStatsLexiconEntry(token = currentToken.toString(), firstVerse = 0, lastVerse = 0))
                 }
             }
         }
