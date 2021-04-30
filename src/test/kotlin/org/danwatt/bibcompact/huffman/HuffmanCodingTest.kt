@@ -1,22 +1,9 @@
 package org.danwatt.bibcompact.huffman
 
-import org.danwatt.bibcompact.huffman.HuffmanCodingTest
-import java.io.EOFException
-import java.io.IOException
-import java.lang.AssertionError
-import kotlin.Throws
-import org.danwatt.bibcompact.huffman.FrequencyTable
-import org.danwatt.bibcompact.huffman.CodeTree
-import org.danwatt.bibcompact.huffman.CanonicalCode
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import org.danwatt.bibcompact.huffman.BitOutputStream
-import org.danwatt.bibcompact.huffman.HuffmanCompress
-import org.danwatt.bibcompact.huffman.HuffmanDecompress
-import org.danwatt.bibcompact.huffman.AdaptiveHuffmanCompress
-import org.danwatt.bibcompact.huffman.AdaptiveHuffmanDecompress
 import org.junit.Assert
 import org.junit.Test
+import java.io.EOFException
+import java.io.IOException
 import java.util.*
 
 /*

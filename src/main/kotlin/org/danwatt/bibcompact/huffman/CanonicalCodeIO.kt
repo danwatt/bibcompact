@@ -1,7 +1,5 @@
 package org.danwatt.bibcompact.huffman
 
-import kotlin.math.ceil
-import kotlin.math.log2
 import kotlin.math.max
 
 object CanonicalCodeIO {

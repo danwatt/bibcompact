@@ -43,7 +43,7 @@ abstract class BibReader(val version: Int) {
     }
 
     abstract fun readLexicon(inputStream: InputStream): Lexicon<TokenOnlyEntry>
-    public fun applyEnglishLanguageFixesAndBuildVerse(
+    fun applyEnglishLanguageFixesAndBuildVerse(
         tokens: List<String>,
         b: Int,
         c: Int,

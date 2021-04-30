@@ -77,7 +77,6 @@ class Version2Writer : BibWriter(2) {
             }
             totalChars++
             encoder.write(0)
-            val bits = actualCodeTree.getCode(0)
         }
         encoder.out.finishByte()
         bitOutput.close()

@@ -24,7 +24,7 @@ class Version1Writer : BibWriter(1) {
     override fun writeLexicon(lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
         val allTokens = lexicon.getTokens()
         val numTokens = allTokens.size
-        val bytesNeeded = 2 + numTokens + allTokens.map { it.token.length }.sum()
+        val bytesNeeded = 2 + numTokens + allTokens.sumOf { it.token.length }
         val byteBuffer = ByteBuffer.allocate(bytesNeeded)
         var position = 0
         byteBuffer.putChar(position, numTokens.toChar())

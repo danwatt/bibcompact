@@ -119,7 +119,7 @@ class StatsTest {
         val allTokens = tokenized.flatMap { it.tokens }.toList()
         assertThat(allTokens).hasSize(917089)
         assertThat(allTokens.distinct()).hasSize(13600)
-        assertThat(allTokens.distinct().map { it.length }.sum()).isEqualTo(95433)
+        assertThat(allTokens.distinct().sumOf { it.length }).isEqualTo(95433)
         assertThat(allTokens.map { it.toLowerCase() }.distinct()).hasSize(12616)
         val counts = allTokens.groupingBy { it }.eachCount()
         val over1000: Map<String, Int> = counts.filterValues { it > 1000 }
@@ -138,9 +138,9 @@ class StatsTest {
             println("$index: ${pair.second}\t${pair.first}")
         }
 
-        val bytesNeeded = tokenized.map { verse ->
+        val bytesNeeded = tokenized.sumOf { verse ->
             (verse.tokens.size + 8 - 1) / 8
-        }.sum()
+        }
         println("$bytesNeeded bytes are needed for bit mapping")
 
 
@@ -149,7 +149,7 @@ class StatsTest {
     @Test
     fun translationComparison() {
         val translations = setOf("asv", "bbe", "kjv", "web", "ylt")
-        val stats = translations.map { trans ->
+        val stats = translations.associateWith { trans ->
             val verses = BibleCsvParser().readTranslation(trans)
             val t = VerseTokenizer()
             val tokenized = verses.map { t.tokenize(it) }
@@ -158,8 +158,8 @@ class StatsTest {
             val caseInsensitive = tokenized.flatMap { it.tokens }.map { it.toUpperCase() }.toList()
             val caseInsensitiveCount: Map<String, Int> = caseInsensitive.groupingBy { it }.eachCount()
             val justOnce = counts.filterValues { it == 1 }.count()
-            trans to (listOf(counts.size, allTokens.size, justOnce, caseInsensitiveCount.size))
-        }.toMap()
+            (listOf(counts.size, allTokens.size, justOnce, caseInsensitiveCount.size))
+        }
 
         stats.forEach { (trans, tokens) ->
             println("Translation $trans has ${tokens[0]} distinct tokens, ${tokens[1]} total, ${tokens[2]} just once, ${tokens[3]} case-insensitive")

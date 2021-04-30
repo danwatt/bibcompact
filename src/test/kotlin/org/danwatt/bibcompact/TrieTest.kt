@@ -109,7 +109,7 @@ class TrieTest {
         } else {
             (node.value as NodeStats).totalOccurrences
         }
-        return c + node.outgoingEdges.map { computeWeight(it) }.sum()
+        return c + node.outgoingEdges.sumOf { computeWeight(it) }
     }
 
     @Test
@@ -172,7 +172,7 @@ class TrieTest {
             tree.put(it, code)
         }
         println("Tree has " + tree.size() + " elements")
-        val rawBytes = distinct.map { it.length + 1 }.sum()
+        val rawBytes = distinct.sumOf { it.length + 1 }
         val encodedTree = encodeTree(tree.node)
         println("Encoded is ${encodedTree.size} vs $rawBytes")
         val counter = IntArray(128)
@@ -233,7 +233,7 @@ class TrieTest {
             "How"
         )
         words.forEach { tree.put(it, 1) }
-        val totalChars = words.map { it.length + 1 }.sum()
+        val totalChars = words.sumOf { it.length + 1 }
         PrettyPrinter.prettyPrint(tree as PrettyPrintable, System.out)
         val encoded = encodeTree(tree.node)
         println(encoded)
