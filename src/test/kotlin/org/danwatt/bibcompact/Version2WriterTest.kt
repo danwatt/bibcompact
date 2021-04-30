@@ -113,7 +113,7 @@ class Version2WriterTest {
         val rawByte = baos.toByteArray()
         assertThat(rawByte).hasSize(1_062_154)//SO close to 1,048,576 (1MB) - 13,578 bytes
 
-        val fw = FileOutputStream("/tmp/kjv.out")
+        val fw = FileOutputStream("/tmp/kjv-v2.out")
         fw.write(rawByte)
         fw.close()
     }
