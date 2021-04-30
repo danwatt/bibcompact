@@ -30,20 +30,25 @@ abstract class BibWriter(val version: Int) {
         lexicon: Lexicon<VerseStatsLexiconEntry>
     ): ByteArray
 
-    fun writeHeader(verses: List<Verse>): ByteArray {
+    open fun writeHeader(verses: List<Verse>): ByteArray {
+        val (books, chapterCounts, verseCounts) = countBookChapterAndVerse(verses)
+        return (listOf(books.size) + chapterCounts + verseCounts).map { it.toByte() }.toByteArray()
+    }
+
+    fun countBookChapterAndVerse(verses: List<Verse>): Triple<List<Int>, List<Int>, List<Int>> {
         val books = verses.map { it.book }.distinct()
-        val chapterCounts = mutableListOf<Byte>()
-        val verseCounts = mutableListOf<Byte>()
+        val chapterCounts = mutableListOf<Int>()
+        val verseCounts = mutableListOf<Int>()
         books.forEach { bookNumber ->
             val chaps = verses.filter { it.book == bookNumber }.map { it.chapter }.distinct()
-            chapterCounts.add(chaps.size.toByte())
+            chapterCounts.add(chaps.size)
             chaps.forEach { chapterNumber ->
-                val numVerses = verses.filter { it.book == bookNumber && it.chapter == chapterNumber }.size.toByte()
+                val numVerses = verses.filter { it.book == bookNumber && it.chapter == chapterNumber }.size
                 verseCounts.add(numVerses)
             }
         }
-
-        return (listOf(books.size.toByte()) + chapterCounts + verseCounts).toByteArray()
+        return Triple(books, chapterCounts, verseCounts)
     }
+
     abstract fun writeLexicon(lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray
 }

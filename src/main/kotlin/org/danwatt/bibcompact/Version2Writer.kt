@@ -8,6 +8,25 @@ import java.util.*
 /* Version 2 builds on version 1, adding Huffman encoding of the lexicon and text */
 class Version2Writer : BibWriter(2) {
 
+
+    override fun writeHeader(verses: List<Verse>): ByteArray {
+        val (books, chapterCounts, verseCounts) = countBookChapterAndVerse(verses)
+        val asIntArray = listOf(books.size) + chapterCounts + verseCounts
+        val freqs = IntArray((asIntArray.maxByOrNull { it } ?: 0)+1)
+        asIntArray.forEach { freqs[it]++ }
+        val baos = ByteArrayOutputStream()
+        val bis = BitOutputStream(baos)
+        val codeTree = writeHuffmanHeader(freqs,bis)
+        val encodder = HuffmanEncoder(bis,codeTree)
+        asIntArray.forEach {
+            encodder.write(it)
+        }
+        bis.close()
+        println("Encoded with huffman: ${baos.toByteArray().size}")
+
+        return (listOf(books.size.toByte()) + chapterCounts + verseCounts).map { it.toByte() }.toByteArray()
+    }
+
     override fun writeVerseData(
         tokenized: List<TokenizedVerse>,
         lexicon: Lexicon<VerseStatsLexiconEntry>
