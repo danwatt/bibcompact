@@ -197,7 +197,7 @@ class Version1WriterTest {
             val vb = compress(LZMA, verseBytes)
             val totalSize = 1 + vw.writeHeader(verses).size + lb.size + vb.size
 
-            println("Translation $trans: lex: ${lb.size} verse: ${vb.size}. Total: ${totalSize}")
+            println("Translation $trans: lex: ${lb.size} verse: ${vb.size}. Total: $totalSize")
 
 
         }

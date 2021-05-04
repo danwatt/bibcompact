@@ -60,5 +60,30 @@ object AdaptiveHuffmanCompress {
         enc.write(256) // EOF
     }
 
+
+    fun compress(input: List<Int>,maxCode: Int, out: BitOutputStream) {
+        val initFreqs = IntArray(maxCode+1)
+        Arrays.fill(initFreqs, 1)
+        var freqs = FrequencyTable(initFreqs)
+        // Don't need to make canonical code because we don't transmit the code tree
+        val enc = HuffmanEncoder(out,freqs.buildCodeTree())
+        var count = 0 // Number of bytes read from the input file
+
+        var i = 0
+        while (i < input.size) {
+            // Read and encode one byte
+            val symbol = input[i++]
+            enc.write(symbol)
+            count++
+
+            // Update the frequency table and possibly the code tree
+            freqs.increment(symbol)
+            if (count < 262144 && isPowerOf2(count) || count % 262144 == 0) // Update code tree
+                enc.codeTree = freqs.buildCodeTree()
+            if (count % 262144 == 0) // Reset frequency table
+                freqs = FrequencyTable(initFreqs)
+        }
+    }
+
     private fun isPowerOf2(x: Int): Boolean = x > 0 && Integer.bitCount(x) == 1
 }

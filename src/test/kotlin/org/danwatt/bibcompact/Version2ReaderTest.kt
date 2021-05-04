@@ -22,7 +22,7 @@ class Version2ReaderTest {
 
     @Test
     fun readLexicon() {
-        val bytes = "0077049c0a54802e908427002ce005980c0002e2e0dea900".fromHexToByteArray()
+        val bytes = "00020077049c0a54802e908427002ce005980ce2e0dea900".fromHexToByteArray()
         val lex = Version2Reader().readLexicon(ByteArrayInputStream(bytes))
         assertThat(lex.getTokens().map { it.token }).containsSequence("Test", "value")
     }
@@ -32,7 +32,7 @@ class Version2ReaderTest {
         val hex =
             "02" + //Version number
                     "020201030102" +//Book/Chapter/Verse header
-                    "0075058a017ca02801b2cb0046580132c0028e082582096001492c11c9200006b1988f1aef3f499b4e517300" +//Lexicon
+                    "00060075058a017ca02801b2cb0046580132c0028e082582096001492c11c920b1988f1aef3f499b4e517300" +//Lexicon
                     "00070494e73a52408530c29b98537b0bd867530cea6e40"//Text
         val bytes = hex.fromHexToByteArray()
         val verses = Version2Reader().read(ByteArrayInputStream(bytes))

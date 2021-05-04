@@ -35,6 +35,7 @@ fun InputStream.readVarByteInt(): Int {
 
 
 fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
+fun IntArray.toHex(): String = joinToString("") { "%02x".format(it) }
 
 
 fun String.fromHexToByteArray(): ByteArray {

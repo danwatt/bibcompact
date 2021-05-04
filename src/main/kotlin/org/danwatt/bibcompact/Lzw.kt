@@ -37,7 +37,7 @@ object Lzw {
         var w = compressed.removeAt(0).toChar().toString()
         val result = StringBuilder(w)
         for (k in compressed) {
-            var entry: String = when {
+            val entry: String = when {
                 dictionary.containsKey(k) -> dictionary[k]!!
                 k == dictSize -> w + w[0]
                 else -> throw IllegalArgumentException("Bad compressed k: $k")

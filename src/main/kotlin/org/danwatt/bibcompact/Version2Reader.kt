@@ -38,9 +38,8 @@ class Version2Reader : BibReader(2) {
 
     override fun readLexicon(inputStream: InputStream): Lexicon<TokenOnlyEntry> {
         val bitInput = BitInputStream(inputStream)
-        val codeTree = CanonicalCodeIO.read(bitInput).toCodeTree()
-
         val totalWords = bitInput.readBits(16)
+        val codeTree = CanonicalCodeIO.read(bitInput).toCodeTree()
         val decoder = HuffmanDecoder(bitInput, codeTree)
         var currentWord = ""
         val words = mutableListOf<String>()

@@ -35,7 +35,7 @@ abstract class BibWriter(val version: Int) {
         return (listOf(books.size) + chapterCounts + verseCounts).map { it.toByte() }.toByteArray()
     }
 
-    fun countBookChapterAndVerse(verses: List<Verse>): Triple<List<Int>, List<Int>, List<Int>> {
+    private fun countBookChapterAndVerse(verses: List<Verse>): Triple<List<Int>, List<Int>, List<Int>> {
         val books = verses.map { it.book }.distinct()
         val chapterCounts = mutableListOf<Int>()
         val verseCounts = mutableListOf<Int>()
