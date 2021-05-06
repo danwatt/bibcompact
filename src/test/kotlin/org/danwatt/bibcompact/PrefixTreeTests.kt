@@ -4,6 +4,7 @@ import com.googlecode.concurrenttrees.radix.ConcurrentRadixTree
 import com.googlecode.concurrenttrees.radix.node.concrete.DefaultCharArrayNodeFactory
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import java.nio.charset.Charset
 
 class PrefixTreeTests {
     private val endOfWord = listOf(0)
@@ -15,7 +16,7 @@ class PrefixTreeTests {
 
     @Test
     fun singleItemTree() {
-        val tree: ConcurrentRadixTree<Boolean> = buildTree(listOf("tree"))
+        val tree: ConcurrentRadixTree<Int> = buildTree(listOf("tree"))
         val codes = writer.write(tree)
 
         assertThat(codes).isEqualTo("tree".toCodes() + endOfWord)
@@ -24,8 +25,9 @@ class PrefixTreeTests {
 
     private fun readAndAssertEqual(
         codes: List<Int>,
-        tree: ConcurrentRadixTree<Boolean>
+        tree: ConcurrentRadixTree<Int>
     ) {
+        //println("Reading codes : ${codes.joinToString(", ")}")
         val readTree = reader.read(codes)
         //println("Results:")
         //PrettyPrinter.prettyPrint(readTree as PrettyPrintable, System.out)
@@ -36,7 +38,7 @@ class PrefixTreeTests {
 
     @Test
     fun twoUnrelatedWords() {
-        val tree: ConcurrentRadixTree<Boolean> = buildTree(listOf("hello", "world"))
+        val tree: ConcurrentRadixTree<Int> = buildTree(listOf("hello", "world"))
         val codes = writer.write(tree)
         assertThat(codes).isEqualTo("hello".toCodes() + endOfWord + "world".toCodes() + endOfWord)
         readAndAssertEqual(codes, tree)
@@ -44,33 +46,40 @@ class PrefixTreeTests {
 
     @Test
     fun twoWordsThatBuildOnEachOther() {
-        val tree: ConcurrentRadixTree<Boolean> = buildTree(listOf("tree", "trees"))
+        val tree: ConcurrentRadixTree<Int> = buildTree(listOf("tree", "trees"))
 
         val codes = writer.write(tree)
-        assertThat(codes).isEqualTo("tree".toCodes() + push + "s".toCodes() + endOfWord + pop + endOfWord)
+        //@formatter:off
+        assertThat(codes).isEqualTo(
+            "tree".toCodes() + endOfWord
+                + push
+                    + "s".toCodes()
+        )
+        //@formatter:on
         readAndAssertEqual(codes, tree)
     }
 
 
     @Test
     fun twoWordsWithSharedPrefixButPrefixIsNotAAWord() {
-        val tree: ConcurrentRadixTree<Boolean> = buildTree(listOf("tree", "treat"))
+        val tree: ConcurrentRadixTree<Int> = buildTree(listOf("tree", "treat"))
 
         val codes = writer.write(tree)
+        //@formatter:off
         assertThat(codes).isEqualTo(
             "tre".toCodes()
-                    + push +
-                    "at".toCodes() + endOfWord +
-                    "e".toCodes() + endOfWord
-                    + pop
+                    + push
+                        + "at".toCodes() + endOfWord
+                        + "e".toCodes() //+ endOfWord
         )
+        //@formatter:on
         readAndAssertEqual(codes, tree)
     }
 
     @Test
     fun blogSample1() {
         val list = listOf("Peter", "Piper", "pickled", "picked", "peck", "peppers")
-        val tree: ConcurrentRadixTree<Boolean> = buildTree(list)
+        val tree: ConcurrentRadixTree<Int> = buildTree(list)
         val codes = writer.write(tree)
 
         //@formatter:off
@@ -79,7 +88,7 @@ class PrefixTreeTests {
             "P".toCodes()
                     + push
                         + "eter".toCodes() + endOfWord
-                        + "iper".toCodes() + endOfWord
+                        + "iper".toCodes()
                     + pop
 // Depth 0
             + "p".toCodes()
@@ -87,14 +96,12 @@ class PrefixTreeTests {
                     + "e".toCodes()
                         + push
                             + "ck".toCodes() + endOfWord
-                            + "ppers".toCodes() + endOfWord
+                            + "ppers".toCodes()
                         + pop
                     + "ick".toCodes()
                         + push
                             + "ed".toCodes() + endOfWord
-                            + "led".toCodes() + endOfWord
-                        + pop
-                + pop
+                            + "led".toCodes()
         )
         //@formatter:on
         readAndAssertEqual(codes, tree)
@@ -134,7 +141,7 @@ class PrefixTreeTests {
             "Piper",
             "?"
         ).distinct()
-        val tree: ConcurrentRadixTree<Boolean> = buildTree(list)
+        val tree: ConcurrentRadixTree<Int> = buildTree(list)
         val codes = writer.write(tree)
         readAndAssertEqual(codes, tree)
         //@formatter:off
@@ -147,7 +154,7 @@ class PrefixTreeTests {
             + "P".toCodes()
                 + push
                     + "eter".toCodes() + endOfWord
-                    + "iper".toCodes() + endOfWord
+                    + "iper".toCodes()
                 + pop
             +"a".toCodes() + endOfWord
             +"by".toCodes() + endOfWord
@@ -159,19 +166,16 @@ class PrefixTreeTests {
                     + "e".toCodes()
                         + push
                             + "ck".toCodes() + endOfWord
-                            + "ppers".toCodes() + endOfWord
+                            + "ppers".toCodes()
                         + pop
-                    + "ick".toCodes()
+                    + "ick".toCodes() + endOfWord
                         + push
                             + "ed".toCodes() + endOfWord
-                            + "led".toCodes() + endOfWord
+                            + "led".toCodes()
                         + pop
-                    + endOfWord //picks
                 + pop
             + "were".toCodes() + endOfWord
         )
-
-
     }
 
     @Test
@@ -180,34 +184,83 @@ class PrefixTreeTests {
         val tokenizer = VerseTokenizer()
         val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
         val distinctWords = tokenized.flatMap { it.tokens }.distinct()
-        val tree: ConcurrentRadixTree<Boolean> = buildTree(distinctWords)
+        val tree: ConcurrentRadixTree<Int> = buildTree(distinctWords)
         val codes = writer.write(tree)
 
-        println("KJV lexicon can be encoded as ${codes.size} codes")
-
         val huffmanEncoded = writeHuffmanWithTree(codes)
-        println("Encoded using huffman ${huffmanEncoded.size}")
 
         readAndAssertEqual(codes, tree)
+
+        assertThat(codes).hasSize(60736)
+        assertThat(huffmanEncoded).hasSize(31799)
 
         /*
         Lower case:
         KJV lexicon can be encoded as 60270 codes
         Encoded using huffman 30273
 
-        Case sensitive
+        Case sensitive:
         KJV lexicon can be encoded as 65990 codes
         Encoded using huffman 33609
+
+
+        Case markers:
+        Tree has 12616 entries
+        KJV lexicon can be encoded as 60270 codes
+        Encoded using huffman 32177
+
+        Removing unnecessaary POP / EOW:
+        KJV lexicon can be encoded as 62247 codes
+        Encoded using huffman 32366
+
+        Removing unnecessary POP and case markers
+        Tree has 12616 entries
+        Before cleanup : 60270
+        After cleanup : 56196
+        KJV lexicon can be encoded as 56196 codes
+        Encoded using huffman 30481
          */
+    }
+
+    @Test
+    fun englishWordListTest() {
+        val lines = PrefixTreeTests::class.java.getResourceAsStream("/en_words.txt")
+            .bufferedReader(Charset.forName("UTF-8")).use {
+            it.readLines()
+        }
+        val tree: ConcurrentRadixTree<Int> = buildTree(lines)
+        val codes = writer.write(tree)
+        val huffmanEncoded = writeHuffmanWithTree(codes)
+
+        readAndAssertEqual(codes, tree)
+
+        assertThat(codes).hasSize(242391)
+        assertThat(huffmanEncoded).hasSize(121766)
     }
 }
 
 private fun String.toCodes(): List<Int> = this.asSequence().map { it.toInt() }.toList()
 
-private fun buildTree(words: List<String>): ConcurrentRadixTree<Boolean> {
-    val tree: ConcurrentRadixTree<Boolean> = ConcurrentRadixTree(DefaultCharArrayNodeFactory())
-    words.forEach {
-        tree.put(it, true)
+private fun buildTree(words: List<String>): ConcurrentRadixTree<Int> {
+    val tree: ConcurrentRadixTree<Int> = ConcurrentRadixTree(DefaultCharArrayNodeFactory())
+    val distinctWords = words.distinct()
+    distinctWords.forEach {
+        /*val lowerExists = distinctWords.contains(it.toLowerCase())
+        val capitalizedExists = distinctWords.contains(it.capitalize())
+        val upperCaseExists = distinctWords.contains(it.toUpperCase())
+        var flag = 0
+        if (lowerExists) {
+            flag += 1
+        }
+        if (capitalizedExists) {
+            flag += 2
+        }
+        if (upperCaseExists) {
+            flag += 4
+        }
+        tree.put(it, flag)
+         */
+        tree.put(it, 0)
     }
     return tree
 }

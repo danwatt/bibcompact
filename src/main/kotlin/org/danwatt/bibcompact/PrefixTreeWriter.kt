@@ -8,58 +8,59 @@ class PrefixTreeWriter {
         const val WORD_MARKER = 0
         const val PUSH_CODE = 1
         const val POP_CODE = 2
+//        const val WORD_MARKER_CAP = 2
+//        const val WORD_MARKER_UPPER = 4
     }
 
     fun write(tree: ConcurrentRadixTree<*>): List<Int> {
-        val list = mutableListOf<Int>()
+        val list = tree.node.outgoingEdges.flatMap { encodeTree(it, 0) }.toList()
+        return cleanup(list)
+    }
 
-        tree.node.outgoingEdges.forEach { edge ->
-            encodeTree(edge, list, 0)
+    private fun cleanup(list: List<Int>): List<Int> {
+        var i = list.size - 1
+        var numToRemove = 0
+        while (list[i] == 2) {
+            numToRemove++
+            i--
         }
-        return list
+        return list.subList(0, list.size - numToRemove)
     }
 
 
     fun encodeTree(
         node: Node,
-        list: MutableList<Int>,
         depth: Int
-    ) {
-
-        val prefix = "\t".repeat(depth)
+    ): List<Int> {
+        val list = mutableListOf<Int>()
         val children = node.outgoingEdges
-        debug(
-            "${prefix}Working on ${node.incomingEdge}. Children : ${children.size} : ${
-                children.joinToString(", ") { it.incomingEdge }
-            }"
-        )
-        val incoming = node.incomingEdge.toString()
+        node.incomingEdge.toString()
 
         list.addAll(node.incomingEdge.map { it.toInt() })
+        if (node.value != null) {
+            //var marker = node.value as Int
+            list.add(0)
+        }
 
         if (children.isNotEmpty()) {
-            debug("${incoming}Pushing")
             list.add(PUSH_CODE)
         }
+        var childrenWentDeeper = false
         children.sortedBy { it.incomingEdge.toString() }
             .forEach { child ->
-                debug("${incoming}\tEncoding child ${child.incomingEdge}")
-                encodeTree(child as Node, list, depth + 1)
+                val sub = encodeTree(child as Node, depth + 1)
+                if (sub.contains(PUSH_CODE)) {
+                    childrenWentDeeper = true
+                }
+                list.addAll(sub)
             }
         if (children.isNotEmpty()) {
-            debug("${incoming}Popping")
+            //A word marker can be implied, so long as it is not immediately preceeded by a POP
+            if (list.last() == WORD_MARKER && list[list.size - 2] != POP_CODE) {
+                list.removeLast()
+            }
             list.add(POP_CODE)
         }
-
-        if (node.value != null) {
-            debug("${incoming}Adding word marker to ${node.incomingEdge}")
-            list.add(WORD_MARKER)
-        } else {
-            debug("${incoming}Skipping word marker for ${node.incomingEdge}")
-        }
-    }
-
-    private fun debug(s: String) {
-        //println(s)
+        return list
     }
 }
