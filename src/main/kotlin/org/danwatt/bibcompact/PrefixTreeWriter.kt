@@ -45,14 +45,9 @@ class PrefixTreeWriter {
         if (children.isNotEmpty()) {
             list.add(PUSH_CODE)
         }
-        var childrenWentDeeper = false
         children.sortedBy { it.incomingEdge.toString() }
             .forEach { child ->
-                val sub = encodeTree(child as Node, depth + 1)
-                if (sub.contains(PUSH_CODE)) {
-                    childrenWentDeeper = true
-                }
-                list.addAll(sub)
+                list.addAll(encodeTree(child as Node, depth + 1))
             }
         if (children.isNotEmpty()) {
             //A word marker can be implied, so long as it is not immediately preceeded by a POP

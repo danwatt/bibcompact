@@ -9,9 +9,9 @@ class Version2Reader : BibReader(2) {
     override fun readVerses(
         input: InputStream,
         counts: List<List<Int>>,
-        lexicon: Lexicon<TokenOnlyEntry>
+        lex: Lexicon<TokenOnlyEntry>
     ): List<Verse> {
-        val endOfVerseMarker = lexicon.getTokens().size
+        val endOfVerseMarker = lex.getTokens().size
         val bitInput = BitInputStream(input)
         val codeTree = CanonicalCodeIO.read(bitInput).toCodeTree()
         val decoder = HuffmanDecoder(bitInput, codeTree)
@@ -25,7 +25,7 @@ class Version2Reader : BibReader(2) {
                     while (t != endOfVerseMarker) {
                         t = decoder.read()
                         if (t != endOfVerseMarker) {
-                            tokens.add(lexicon.getTokens()[t].token)
+                            tokens.add(lex.getTokens()[t].token)
                         }
                     }
                     verses.add(applyEnglishLanguageFixesAndBuildVerse(tokens, b, c, v))

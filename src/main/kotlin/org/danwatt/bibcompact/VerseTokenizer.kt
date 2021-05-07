@@ -10,8 +10,9 @@ class VerseTokenizer {
         return TokenizedVerse(verse.id, verse.book, verse.chapter, verse.verse, tokens)
     }
 
-    fun tokenize(text: String): List<String> {
-        val tokenizer = StringTokenizer(text, " .,;:'?!()", true)
-        return tokenizer.asSequence().filter { it != " " }.toList() as List<String>
-    }
+    fun tokenize(text: String): List<String> =
+        StringTokenizer(text, " .,;:'?!()", true)
+            .asSequence()
+            .filter { it != " " }
+            .toList() as List<String>
 }
