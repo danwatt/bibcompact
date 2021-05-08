@@ -6,8 +6,8 @@ import com.googlecode.concurrenttrees.radix.node.Node
 class PrefixTreeWriter {
     companion object {
         const val WORD_MARKER = 0
-        const val PUSH_CODE = 1
-        const val POP_CODE = 2
+        const val PUSH_CODE = 30
+        const val POP_CODE = 31
 //        const val WORD_MARKER_CAP = 2
 //        const val WORD_MARKER_UPPER = 4
     }
@@ -39,7 +39,11 @@ class PrefixTreeWriter {
         list.addAll(node.incomingEdge.map { it.toInt() })
         if (node.value != null) {
             //var marker = node.value as Int
-            list.add(0)
+            //list.add(WORD_MARKER)
+            if ((node.value as Int) >= PUSH_CODE) {
+                throw IllegalArgumentException("Value must be less than ${PUSH_CODE}")
+            }
+            list.add(node.value as Int)
         }
 
         if (children.isNotEmpty()) {
@@ -51,9 +55,9 @@ class PrefixTreeWriter {
             }
         if (children.isNotEmpty()) {
             //A word marker can be implied, so long as it is not immediately preceeded by a POP
-            if (list.last() == WORD_MARKER && list[list.size - 2] != POP_CODE) {
+            /*if (list.last() == WORD_MARKER && list[list.size - 2] != POP_CODE) {
                 list.removeLast()
-            }
+            }*/
             list.add(POP_CODE)
         }
         return list

@@ -34,7 +34,17 @@ fun writeHuffmanHeader(
     val canonCode = CanonicalCode(originalCodeTree, frequencies.getSymbolLimit())
 
     val bytesWritten = CanonicalCodeIO.write(canonCode, bitOutput)
-    println("Huffman header: ${bytesWritten}")
+/*
+val bitDistribution = IntArray(21)
+for (i in 0 until canonCode.getSymbolLimit()) {
+    bitDistribution[canonCode.getCodeLength(i)]++
+}
 
+bitDistribution.forEachIndexed { index, i ->
+    println("Bit distribtuon ${index}: $i")
+}
+
+println("Huffman header: ${bytesWritten}")
+*/
     return canonCode.toCodeTree()
 }

@@ -4,7 +4,6 @@ import com.googlecode.concurrenttrees.radix.ConcurrentRadixTree
 import com.googlecode.concurrenttrees.radix.node.concrete.DefaultCharArrayNodeFactory
 import org.danwatt.bibcompact.PrefixTreeWriter.Companion.POP_CODE
 import org.danwatt.bibcompact.PrefixTreeWriter.Companion.PUSH_CODE
-import org.danwatt.bibcompact.PrefixTreeWriter.Companion.WORD_MARKER
 import java.util.*
 
 class PrefixTreeReader {
@@ -18,18 +17,18 @@ class PrefixTreeReader {
         while (i < codes.size) {
             val indent = "\t".repeat(stack.size)
             val currentCode = codes[i]
-            when (currentCode) {
-                WORD_MARKER -> {
+            when {
+                currentCode < PUSH_CODE -> {
                     if (currentWord == "") {
                         currentWord = lastPop
                     }
                     words.add(stack.joinToString("") + currentWord)
                 }
-                PUSH_CODE -> {
+                currentCode == PUSH_CODE -> {
                     stack.push(currentWord)
                     currentWord = ""
                 }
-                POP_CODE -> {
+                currentCode == POP_CODE -> {
                     if (currentWord != "") {
                         words.add(stack.joinToString("") + currentWord)
                     }
@@ -37,12 +36,11 @@ class PrefixTreeReader {
                     currentWord = ""
                 }
                 else -> {
-                    if (lastCode == WORD_MARKER) {
+                    if (lastCode < PUSH_CODE) {
                         currentWord = ""
                     }
                     currentWord += currentCode.toChar()
                 }
-
             }
             lastCode = currentCode
             i++

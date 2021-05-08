@@ -13,5 +13,5 @@ data class TokenizedVerse(
     val book: Int,
     val chapter: Int,
     val verse: Int,
-    val tokens: List<String>
+    var tokens: List<String>
 )
