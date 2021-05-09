@@ -7,13 +7,14 @@ import org.danwatt.bibcompact.PrefixTreeWriter.Companion.PUSH_CODE
 import java.util.*
 
 class PrefixTreeReader {
-    fun read(codes: List<Int>): ConcurrentRadixTree<Boolean> {
+    fun read(codes: List<Int>): ConcurrentRadixTree<Int> {
         val words = mutableListOf<String>()
         val stack = Stack<String>()
         var i = 0
         var currentWord = ""
         var lastPop = ""
         var lastCode = -1
+        val tree = ConcurrentRadixTree<Int>(DefaultCharArrayNodeFactory())
         while (i < codes.size) {
             val indent = "\t".repeat(stack.size)
             val currentCode = codes[i]
@@ -22,7 +23,7 @@ class PrefixTreeReader {
                     if (currentWord == "") {
                         currentWord = lastPop
                     }
-                    words.add(stack.joinToString("") + currentWord)
+                    tree.put(stack.joinToString("") + currentWord, currentCode)
                 }
                 currentCode == PUSH_CODE -> {
                     stack.push(currentWord)
@@ -47,13 +48,6 @@ class PrefixTreeReader {
         }
         if (currentWord != "") {
             words.add(stack.joinToString("") + currentWord)
-        }
-        val tree = ConcurrentRadixTree<Boolean>(DefaultCharArrayNodeFactory())
-        words.forEach {
-            //HMMM
-            if (it.isNotEmpty()) {
-                tree.put(it, true)
-            }
         }
         return tree
     }

@@ -1,11 +1,13 @@
 package org.danwatt.bibcompact
 
 import org.assertj.core.api.Assertions
+import org.junit.Ignore
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
 import java.nio.charset.Charset
 
+@Ignore
 class Version4WriterTest {
     @Test
     fun kjvTest() {

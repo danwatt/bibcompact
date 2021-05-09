@@ -22,17 +22,17 @@ class Version3Writer : BibWriter(3) {
         return writeHuffmanWithTree(tokens)
     }
 
-
     override fun writeLexicon(lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
         val bitMapping = buildBitMapping(lexicon)
-
+        val tokens: List<String> = convertLexiconToList(lexicon)
+        val tree: ConcurrentRadixTree<Int> = buildPrefixTree(tokens, bitMapping)
+        val prefixTree = PrefixTreeWriter().write(tree)
 
         val byteOutput = ByteArrayOutputStream()
         val bitOutput = BitOutputStream(byteOutput)
-        bitOutput.writeBits(lexicon.getTokens().size, 16)
-        val tokens: List<String> = convertLexiconToList(lexicon)
-        val tree: ConcurrentRadixTree<Int> = buildTree(tokens, bitMapping)
-        val prefixTree = PrefixTreeWriter().write(tree)
+        println("Prefix tree is made up of ${prefixTree.size} codes")
+
+        bitOutput.writeBits(prefixTree.size, 24)
         writeHuffmanWithTree(bitOutput, prefixTree)
         bitOutput.close()
         return byteOutput.toByteArray()
@@ -56,11 +56,11 @@ class Version3Writer : BibWriter(3) {
         return lexicon.getTokens().map { it.token }.sortedWith(c).toList()
     }
 
-    private fun buildTree(tokens: List<String>, bitMapping: Map<String, Int>): ConcurrentRadixTree<Int> {
+    private fun buildPrefixTree(tokens: List<String>, bitMapping: Map<String, Int>): ConcurrentRadixTree<Int> {
         val tree: ConcurrentRadixTree<Int> = ConcurrentRadixTree(DefaultCharArrayNodeFactory())
         val distinctWords = tokens.distinct()
-        val (g16, l16) = bitMapping.entries.partition { it.value >= 16 }
-        println("There are ${g16.size} tokens that need 16 or more bits, ${l16.size} that need fewer")
+        val (g16, l16) = bitMapping.entries.partition { it.value >= 14 }
+        println("There are ${g16.size} tokens that need 14 or more bits, ${l16.size} that need fewer")
         distinctWords.forEach {
             val bits = bitMapping[it]!!
             if (bits < 3 || bits > 25) {

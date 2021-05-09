@@ -5,22 +5,20 @@ import com.googlecode.concurrenttrees.radix.node.Node
 
 class PrefixTreeWriter {
     companion object {
-        const val WORD_MARKER = 0
+        // const val WORD_MARKER = 0
         const val PUSH_CODE = 30
         const val POP_CODE = 31
-//        const val WORD_MARKER_CAP = 2
-//        const val WORD_MARKER_UPPER = 4
     }
 
     fun write(tree: ConcurrentRadixTree<*>): List<Int> {
         val list = tree.node.outgoingEdges.flatMap { encodeTree(it, 0) }.toList()
-        return cleanup(list)
+        return removeTrailingPops(list)
     }
 
-    private fun cleanup(list: List<Int>): List<Int> {
+    private fun removeTrailingPops(list: List<Int>): List<Int> {
         var i = list.size - 1
         var numToRemove = 0
-        while (list[i] == 2) {
+        while (list[i] == POP_CODE) {
             numToRemove++
             i--
         }

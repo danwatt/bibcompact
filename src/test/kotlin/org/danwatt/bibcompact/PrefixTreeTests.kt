@@ -1,15 +1,18 @@
 package org.danwatt.bibcompact
 
+import com.googlecode.concurrenttrees.common.PrettyPrinter
 import com.googlecode.concurrenttrees.radix.ConcurrentRadixTree
 import com.googlecode.concurrenttrees.radix.node.concrete.DefaultCharArrayNodeFactory
+import com.googlecode.concurrenttrees.radix.node.util.PrettyPrintable
 import org.assertj.core.api.Assertions.assertThat
+import org.danwatt.bibcompact.PrefixTreeWriter.Companion.POP_CODE
+import org.danwatt.bibcompact.PrefixTreeWriter.Companion.PUSH_CODE
 import org.junit.Test
 import java.nio.charset.Charset
 
 class PrefixTreeTests {
-    private val endOfWord = listOf(0)
-    private val push = listOf(1)
-    private val pop = listOf(2)
+    private val push = listOf(PUSH_CODE)
+    private val pop = listOf(POP_CODE)
 
     private val writer = PrefixTreeWriter()
     private val reader = PrefixTreeReader()
@@ -19,14 +22,16 @@ class PrefixTreeTests {
         val tree: ConcurrentRadixTree<Int> = buildTree(listOf("tree"))
         val codes = writer.write(tree)
 
-        assertThat(codes).isEqualTo("tree".toCodes() + endOfWord)
-        readAndAssertEqual(codes, tree)
+        assertThat(codes).isEqualTo("tree".toCodes() + listOf(4))
+        val t = readAndAssertEqual(codes, tree)
+        PrettyPrinter.prettyPrint(t as PrettyPrintable, System.out)
+        assertThat(t.getValueForExactKey("tree")).isEqualTo(4)
     }
 
     private fun readAndAssertEqual(
         codes: List<Int>,
         tree: ConcurrentRadixTree<Int>
-    ) {
+    ): ConcurrentRadixTree<Int> {
         //println("Reading codes : ${codes.joinToString(", ")}")
         val readTree = reader.read(codes)
         //println("Results:")
@@ -34,13 +39,14 @@ class PrefixTreeTests {
         assertThat(readTree.getKeysStartingWith("").toList()).isEqualTo(
             tree.getKeysStartingWith("").toList()
         )
+        return readTree
     }
 
     @Test
     fun twoUnrelatedWords() {
         val tree: ConcurrentRadixTree<Int> = buildTree(listOf("hello", "world"))
         val codes = writer.write(tree)
-        assertThat(codes).isEqualTo("hello".toCodes() + endOfWord + "world".toCodes() + endOfWord)
+        assertThat(codes).isEqualTo("hello".toCodes() + listOf(5) + "world".toCodes() + listOf(5))
         readAndAssertEqual(codes, tree)
     }
 
@@ -51,9 +57,9 @@ class PrefixTreeTests {
         val codes = writer.write(tree)
         //@formatter:off
         assertThat(codes).isEqualTo(
-            "tree".toCodes() + endOfWord
+            "tree".toCodes() + listOf(4)
                 + push
-                    + "s".toCodes()
+                    + "s".toCodes() + listOf(5)
         )
         //@formatter:on
         readAndAssertEqual(codes, tree)
@@ -69,8 +75,8 @@ class PrefixTreeTests {
         assertThat(codes).isEqualTo(
             "tre".toCodes()
                     + push
-                        + "at".toCodes() + endOfWord
-                        + "e".toCodes() //+ endOfWord
+                        + "at".toCodes() + listOf(5)
+                        + "e".toCodes()  + listOf(4)
         )
         //@formatter:on
         readAndAssertEqual(codes, tree)
@@ -84,24 +90,22 @@ class PrefixTreeTests {
 
         //@formatter:off
         assertThat(codes).isEqualTo(
-//Depth 0
             "P".toCodes()
                     + push
-                        + "eter".toCodes() + endOfWord
-                        + "iper".toCodes()
+                        + "eter".toCodes() + listOf(5)
+                        + "iper".toCodes() + listOf(5)
                     + pop
-// Depth 0
             + "p".toCodes()
                 + push
                     + "e".toCodes()
                         + push
-                            + "ck".toCodes() + endOfWord
-                            + "ppers".toCodes()
+                            + "ck".toCodes() + listOf(4)
+                            + "ppers".toCodes() + listOf(7)
                         + pop
                     + "ick".toCodes()
                         + push
-                            + "ed".toCodes() + endOfWord
-                            + "led".toCodes()
+                            + "ed".toCodes() + listOf(6)
+                            + "led".toCodes() + listOf(7)
         )
         //@formatter:on
         readAndAssertEqual(codes, tree)
@@ -146,35 +150,35 @@ class PrefixTreeTests {
         readAndAssertEqual(codes, tree)
         //@formatter:off
         assertThat(codes).isEqualTo(
-            ",".toCodes() + endOfWord
-            +".".toCodes() + endOfWord
-            +"?".toCodes() + endOfWord
-            +"DID".toCodes() + endOfWord
-            +"If".toCodes() + endOfWord
+            ",".toCodes() + listOf(1)
+            +".".toCodes() + listOf(1)
+            +"?".toCodes() + listOf(1)
+            +"DID".toCodes() + listOf(3)
+            +"If".toCodes() + listOf(2)
             + "P".toCodes()
                 + push
-                    + "eter".toCodes() + endOfWord
-                    + "iper".toCodes()
+                    + "eter".toCodes() + listOf(5)
+                    + "iper".toCodes() + listOf(5)
                 + pop
-            +"a".toCodes() + endOfWord
-            +"by".toCodes() + endOfWord
-            +"how".toCodes() + endOfWord
-            +"many".toCodes() + endOfWord
-            +"of".toCodes() + endOfWord
+            +"a".toCodes() + listOf(1)
+            +"by".toCodes() + listOf(2)
+            +"how".toCodes() + listOf(3)
+            +"many".toCodes() + listOf(4)
+            +"of".toCodes() + listOf(2)
             +"p".toCodes()
                 + push
                     + "e".toCodes()
                         + push
-                            + "ck".toCodes() + endOfWord
-                            + "ppers".toCodes()
+                            + "ck".toCodes() + listOf(4)
+                            + "ppers".toCodes() + listOf(7)
                         + pop
-                    + "ick".toCodes() + endOfWord
+                    + "ick".toCodes() + listOf(4)
                         + push
-                            + "ed".toCodes() + endOfWord
-                            + "led".toCodes()
+                            + "ed".toCodes() + listOf(6)
+                            + "led".toCodes() + listOf(7)
                         + pop
                 + pop
-            + "were".toCodes() + endOfWord
+            + "were".toCodes() + listOf(4)
         )
     }
 
@@ -191,8 +195,8 @@ class PrefixTreeTests {
 
         readAndAssertEqual(codes, tree)
 
-        assertThat(codes).hasSize(60736)
-        assertThat(huffmanEncoded).hasSize(31799)
+        assertThat(codes).hasSize(65988)
+        assertThat(huffmanEncoded).hasSize(39011)
 
         /*
         Lower case:
@@ -202,6 +206,9 @@ class PrefixTreeTests {
         Case sensitive:
         KJV lexicon can be encoded as 65990 codes
         Encoded using huffman 33609
+
+        Storing with a `0` after every complete word
+        65988 codes / 33611 huffman
 
 
         Case markers:
@@ -234,8 +241,8 @@ class PrefixTreeTests {
 
         readAndAssertEqual(codes, tree)
 
-        assertThat(codes).hasSize(242391)
-        assertThat(huffmanEncoded).hasSize(121766)
+        assertThat(codes).hasSize(265114)
+        assertThat(huffmanEncoded).hasSize(153216)//If we omitted the value, it would be a whole lot less
     }
 }
 
@@ -245,22 +252,7 @@ private fun buildTree(words: List<String>): ConcurrentRadixTree<Int> {
     val tree: ConcurrentRadixTree<Int> = ConcurrentRadixTree(DefaultCharArrayNodeFactory())
     val distinctWords = words.distinct()
     distinctWords.forEach {
-        /*val lowerExists = distinctWords.contains(it.toLowerCase())
-        val capitalizedExists = distinctWords.contains(it.capitalize())
-        val upperCaseExists = distinctWords.contains(it.toUpperCase())
-        var flag = 0
-        if (lowerExists) {
-            flag += 1
-        }
-        if (capitalizedExists) {
-            flag += 2
-        }
-        if (upperCaseExists) {
-            flag += 4
-        }
-        tree.put(it, flag)
-         */
-        tree.put(it, 0)
+        tree.put(it, it.length)
     }
     return tree
 }
