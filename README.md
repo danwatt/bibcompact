@@ -38,7 +38,7 @@ and search tools.
 
 * Version 1 : Encode all words into the lexicon, then reference the lexicon with variable-width integer lookups
 * Version 2 : Encode the lexicon using Huffman codes, then separately encode the integer lookups using Huffman codes
-* Version 3 : (WIP) Encode the lexicon using a prefix tree / trie, continue encoding integer lookups using Huffman codes
+* Version 3 : Encode the lexicon using a prefix tree / trie, continue encoding integer lookups using Huffman codes
 
 ## Work in progress stats
 
@@ -47,8 +47,9 @@ and search tools.
 | zpaq -m5             |   739,407 | 16.682% |
 | bibcompact V1 + LZMA |   819,766 | 18.494% |
 | bzip2 -9             |   993,406 | 22.412% |
-| bibcompact V3        | 1,040,206 | ....... |
+| bibcompact V3 (Trie) | 1,040,206 | 23.468% |
 | lzma -9              | 1,048,408 | 23.653% |
+| 1MB Boundary         | 1,048,576 | ------- |
 | xz -9                | 1,048,616 | 23.658% |
 | 7z -mx9              | 1,048,710 | 23.660% |
 | bibcompact V2 (HUFF) | 1,062,154 | 23.963% |
