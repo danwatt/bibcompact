@@ -25,7 +25,7 @@ class Version4WriterTest {
         val rawByte = byteOutput.toByteArray()
         Assertions.assertThat(rawByte).hasSize(1_062_154)//SO close to 1,048,576 (1MB) - 13,578 bytes
 
-        val fw = FileOutputStream("/tmp/kjv-v2.out")
+        val fw = FileOutputStream("/tmp/kjv-v4.out")
         fw.write(rawByte)
         fw.close()
     }

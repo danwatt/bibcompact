@@ -11,8 +11,13 @@ class PrefixTreeWriter {
     }
 
     fun write(tree: ConcurrentRadixTree<*>): List<Int> {
-        val list = tree.node.outgoingEdges.flatMap { encodeTree(it, 0) }.toList()
+        return write(tree.node)
+    }
+
+    fun write(node: Node) : List<Int> {
+        val list = node.outgoingEdges.flatMap { encodeTree(it, 0) }.toList()
         return removeTrailingPops(list)
+
     }
 
     private fun removeTrailingPops(list: List<Int>): List<Int> {
@@ -33,6 +38,7 @@ class PrefixTreeWriter {
         val list = mutableListOf<Int>()
         val children = node.outgoingEdges
         node.incomingEdge.toString()
+        "".toCharArray()
 
         list.addAll(node.incomingEdge.map { it.toInt() })
         if (node.value != null) {
@@ -46,12 +52,12 @@ class PrefixTreeWriter {
 
         if (children.isNotEmpty()) {
             list.add(PUSH_CODE)
-        }
-        children.sortedBy { it.incomingEdge.toString() }
-            .forEach { child ->
-                list.addAll(encodeTree(child as Node, depth + 1))
-            }
-        if (children.isNotEmpty()) {
+
+            children.sortedBy { it.incomingEdge.toString() }
+                .forEach { child ->
+                    list.addAll(encodeTree(child as Node, depth + 1))
+                }
+
             //A word marker can be implied, so long as it is not immediately preceeded by a POP
             /*if (list.last() == WORD_MARKER && list[list.size - 2] != POP_CODE) {
                 list.removeLast()

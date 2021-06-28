@@ -4,6 +4,12 @@ import com.googlecode.concurrenttrees.common.PrettyPrinter
 import com.googlecode.concurrenttrees.radix.ConcurrentRadixTree
 import com.googlecode.concurrenttrees.radix.node.concrete.DefaultCharArrayNodeFactory
 import com.googlecode.concurrenttrees.radix.node.util.PrettyPrintable
+import com.googlecode.concurrenttrees.radixinverted.ConcurrentInvertedRadixTree
+import com.googlecode.concurrenttrees.radixinverted.InvertedRadixTree
+import com.googlecode.concurrenttrees.radixreversed.ConcurrentReversedRadixTree
+import com.googlecode.concurrenttrees.radixreversed.ReversedRadixTree
+import com.googlecode.concurrenttrees.suffix.ConcurrentSuffixTree
+import com.googlecode.concurrenttrees.suffix.SuffixTree
 import org.assertj.core.api.Assertions.assertThat
 import org.danwatt.bibcompact.PrefixTreeWriter.Companion.POP_CODE
 import org.danwatt.bibcompact.PrefixTreeWriter.Companion.PUSH_CODE
@@ -190,7 +196,6 @@ class PrefixTreeTests {
         val distinctWords = tokenized.flatMap { it.tokens }.distinct()
         val tree: ConcurrentRadixTree<Int> = buildTree(distinctWords)
         val codes = writer.write(tree)
-
         val huffmanEncoded = writeHuffmanWithTree(codes)
 
         readAndAssertEqual(codes, tree)
@@ -234,7 +239,7 @@ class PrefixTreeTests {
         val lines = PrefixTreeTests::class.java.getResourceAsStream("/en_words.txt")
             .bufferedReader(Charset.forName("UTF-8")).use {
             it.readLines()
-        }
+        }.distinct().sorted()
         val tree: ConcurrentRadixTree<Int> = buildTree(lines)
         val codes = writer.write(tree)
         val huffmanEncoded = writeHuffmanWithTree(codes)
@@ -243,14 +248,25 @@ class PrefixTreeTests {
 
         assertThat(codes).hasSize(265114)
         assertThat(huffmanEncoded).hasSize(153216)//If we omitted the value, it would be a whole lot less
+
+
     }
 }
 
 private fun String.toCodes(): List<Int> = this.asSequence().map { it.toInt() }.toList()
 
 private fun buildTree(words: List<String>): ConcurrentRadixTree<Int> {
-    val tree: ConcurrentRadixTree<Int> = ConcurrentRadixTree(DefaultCharArrayNodeFactory())
     val distinctWords = words.distinct()
+    val t2: ConcurrentReversedRadixTree<Int> = ConcurrentReversedRadixTree(DefaultCharArrayNodeFactory())
+    distinctWords.forEach {
+        t2.put(it, it.length)
+    }
+    val codes = PrefixTreeWriter().write(t2.node)
+    val huffmanEncoded = writeHuffmanWithTree(codes)
+    println("Reverse tree can be written in ${huffmanEncoded.size} bytes")
+
+    val tree: ConcurrentRadixTree<Int> = ConcurrentRadixTree(DefaultCharArrayNodeFactory())
+
     distinctWords.forEach {
         tree.put(it, it.length)
     }

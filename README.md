@@ -46,10 +46,12 @@ and search tools.
 |----------------------|-----------|---------|
 | zpaq -m5             |   739,407 | 16.682% |
 | bibcompact V1 + LZMA |   819,766 | 18.494% |
+| bibcompact V4+BG+SKP |   1256 + 963466 - 10022(SKP) - 25860(BG) = 928,840 (261 saved if we adaptive huff the header) | ---- |
+| bibcompact V4 (WIP)  |   970,200 | ------- |
 | bzip2 -9             |   993,406 | 22.412% |
 | bibcompact V3 (Trie) | 1,040,206 | 23.468% |
 | lzma -9              | 1,048,408 | 23.653% |
-| 1MB Boundary         | 1,048,576 | ------- |
+| 1MB Boundary, GB ROM | 1,048,576 | ------- |
 | xz -9                | 1,048,616 | 23.658% |
 | 7z -mx9              | 1,048,710 | 23.660% |
 | bibcompact V2 (HUFF) | 1,062,154 | 23.963% |

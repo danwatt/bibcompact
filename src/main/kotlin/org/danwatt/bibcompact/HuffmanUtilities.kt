@@ -25,6 +25,14 @@ fun writeHuffmanWithTree(bitOutput: BitOutputStream, tokens: List<Int>) {
     encoder.out.finishByte()
 }
 
+fun encodeWithAdaptiveHuffman(fileData: List<Int>): ByteArray {
+    val byteOutput = ByteArrayOutputStream()
+    val bitOutput = BitOutputStream(byteOutput)
+    AdaptiveHuffmanCompress.compress(fileData, fileData.maxOrNull() ?: 0, bitOutput)
+    bitOutput.close()
+    return byteOutput.toByteArray()
+}
+
 fun writeHuffmanHeader(
     initFreqs: IntArray,
     bitOutput: BitOutputStream
@@ -33,7 +41,7 @@ fun writeHuffmanHeader(
     val originalCodeTree = frequencies.buildCodeTree()
     val canonCode = CanonicalCode(originalCodeTree, frequencies.getSymbolLimit())
 
-    val bytesWritten = CanonicalCodeIO.write(canonCode, bitOutput)
+    CanonicalCodeIO.write(canonCode, bitOutput)
 /*
 val bitDistribution = IntArray(21)
 for (i in 0 until canonCode.getSymbolLimit()) {

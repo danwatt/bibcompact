@@ -13,7 +13,7 @@ class Version4Writer(val stopWords: Set<String>) : BibWriter(4) {
      */
 
     override fun writeVerseData(verses: List<TokenizedVerse>, lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
-        bookCompressionTest(verses,lexicon)
+        //bookCompressionTest(verses, lexicon)
         //We will be writing three bitstreams:
         //1) A 0/1 to indicate if the word is a stop word or a search word
         //2) The search word file
@@ -32,7 +32,7 @@ class Version4Writer(val stopWords: Set<String>) : BibWriter(4) {
             verse.tokens.forEach {
                 if (stopWordList.contains(it)) {
                     toggle.add(0)
-                    stopWordFile.add(stopWordList.indexOf(it) + 1)
+                    stopWordFile.add(stopWordList.indexOf(it))
                 } else {
                     toggle.add(1)
                     stopWordFile.add(0)
@@ -44,21 +44,37 @@ class Version4Writer(val stopWords: Set<String>) : BibWriter(4) {
         }
 
         val switchFileBytes = encodeBits(toggle)
-        val searchFileBytes = encodeIntegers(searchFile)
-        val stopWordFileBytes = encodeIntegers(stopWordFile)
+        val searchFileBytes = writeHuffmanWithTree(searchFile)
+        val stopWordFileBytes = writeHuffmanWithTree(stopWordFile)
         println("Switch file :${switchFileBytes.size}")//118524, or 118528 as Huffman codes
         println("Search file :${searchFileBytes.size}")
         println("Stopword file :${stopWordFileBytes.size}")
+        println("Total size: ${searchFileBytes.size + stopWordFileBytes.size}")
 
-        stopwordTest(stopWordFile.filter { it > 0 })
-
-        for (skip in 6..64) {
-            //testSkips(skip, searchFile)
+        for (i in -16 .. 16) {
+            val swc = bigramTest(stopWordFile, 1024 + i)
         }
+        println("Search file")
+        /*
+NGrams: 128. Original: 917089 original compressed: 484905, n-gram uncompressed: 853369, n-gram compressed: 464466. Savings: 20439
+NGrams: 256. Original: 917089 original compressed: 484905, n-gram uncompressed: 836796, n-gram compressed: 462483. Savings: 22422
+NGrams: 512. Original: 917089 original compressed: 484905, n-gram uncompressed: 818910, n-gram compressed: 460453. Savings: 24452
+NGrams: 1024. Original: 917089 original compressed: 484905, n-gram uncompressed: 800197, n-gram compressed: 459146. Savings: 25759
+NGrams: 2048. Original: 917089 original compressed: 484905, n-gram uncompressed: 784329, n-gram compressed: 460672. Savings: 24233
+NGrams: 4096. Original: 917089 original compressed: 484905, n-gram uncompressed: 776264, n-gram compressed: 468845. Savings: 16060
+NGrams: 8192. Original: 917089 original compressed: 484905, n-gram uncompressed: 778115, n-gram compressed: 487230. Savings: -2325
+         */
+
+
+        for (skip in 2..32) {
+            testSkips(skip, searchFile)
+        }
+
+        //Best so far: 16 skips : 468539, 1024 ngrams: 459146 = 927,685, vs 1,000,455 for V3
 
         /* Using three files :
         Switch file :118528
-        Search file :478561
+        Search file :478561 ->
         Stopword file :405160
         Total: 1,002,249
          */
@@ -86,123 +102,161 @@ class Version4Writer(val stopWords: Set<String>) : BibWriter(4) {
         Total: 993,414
          */
 
+       // bookCompressionTest(verses, lexicon, stopWordList, searchWordList)
+
         return /*switchFileBytes +*/ searchFileBytes + stopWordFileBytes
     }
 
-    private fun bookCompressionTest(verses: List<TokenizedVerse>, lexicon: Lexicon<VerseStatsLexiconEntry>) {
-        val tokens: List<VerseStatsLexiconEntry> =     lexicon.getTokens()
+    private fun bookCompressionTest(
+        verses: List<TokenizedVerse>,
+        lexicon: Lexicon<VerseStatsLexiconEntry>,
+        stopWordList: List<String>,
+        searchWordList: List<String>
+    ) {
+        val tokens: List<VerseStatsLexiconEntry> = lexicon.getTokens()
         val byBook: Map<Int, List<TokenizedVerse>> = verses.groupBy { it.book }
 
-        var totalBytes = 0
+        var totalBytesCompact = 0
+        var totalBytesAdaptive = 0
 
         byBook.forEach { (bookNumber, bookVerses) ->
-            val compressedData1 = bookCompresssion1(bookVerses, tokens, bookNumber)
-            val compressedData2 = bookCompresssion2(bookVerses, tokens, bookNumber)
-            val compressedData3 = bookCompresssion3(bookVerses, tokens, bookNumber)
-            totalBytes+= compressedData1.size
+            //val compressedBook = bookCompresssionStandard(bookVerses, tokens, bookNumber, stopWordList, searchWordList)
+            val compressedData2 = bookCompressCompactIntRange(bookVerses, tokens, bookNumber, lexicon, stopWordList, searchWordList)
+            val bookCompressAdaptive = bookCompresssion3(bookVerses, tokens, bookNumber, stopWordList, searchWordList)
+            totalBytesCompact += compressedData2.size
+            totalBytesAdaptive += bookCompressAdaptive.size
 
-            println("$bookNumber\t${compressedData1.size}\t${compressedData2.size}\t${compressedData3.size}")
+            println("$bookNumber\t${bookCompressAdaptive.size}")
         }
-        println("Encoding each book separately is $totalBytes")
+        println("Encoding each book separately is $totalBytesCompact")
+        println("Adaptive encoding on each book separately is $totalBytesAdaptive")
     }
-    // Option 2 : Just use the offsets in the Lexicon
-    private fun bookCompresssion2(
+
+    // Option 1 : Normal
+    private fun bookCompresssionStandard(
         bookVerses: List<TokenizedVerse>,
         tokens: List<VerseStatsLexiconEntry>,
-        bookNumber: Int
+        bookNumber: Int,
+        stopWordList: List<String>,
+        searchWordList: List<String>
     ): ByteArray {
         val fileData: List<Int> = bookVerses.asSequence().flatMap { verse ->
-            verse.tokens.map { token->
-                tokens.indexOfFirst { it.token == token}
-            }.toList() + listOf(0)
+            verse.tokens.filter { searchWordList.contains(it) }
+                .map { token -> tokens.indexOfFirst { it.token == token } }
+                .toList() + listOf(0)
         }.toList()
-        val compressedData = encodeIntegers(fileData)
+        val compressedData = writeHuffmanWithTree(fileData)
         //println("Book $bookNumber has ${bookVerses.size} verses, ${distinctTokensInBookSorted.size} distinctTokens and can be written in ${compressedData.size} bytes")
         return compressedData
     }
 
-    //Option 3: Adaptive
-    private fun bookCompresssion3(
+    //Option 2: Copmact the integer range
+    private fun bookCompressCompactIntRange(
         bookVerses: List<TokenizedVerse>,
         tokens: List<VerseStatsLexiconEntry>,
-        bookNumber: Int
+        bookNumber: Int,
+        lexicon: Lexicon<VerseStatsLexiconEntry>,
+        stopWordList: List<String>,
+        searchWordList: List<String>
     ): ByteArray {
-        val fileData: List<Int> = bookVerses.asSequence().flatMap { verse ->
-            verse.tokens.map { token->
-                tokens.indexOfFirst { it.token == token}
-            }.toList() + listOf(0)
-        }.toList()
-        val byteOutput = encodeWithAdaptiveHuffman(fileData)
-
-        return byteOutput.toByteArray()
-    }
-
-    private fun encodeWithAdaptiveHuffman(fileData: List<Int>): ByteArrayOutputStream {
-        val byteOutput = ByteArrayOutputStream()
-        val bitOutput = BitOutputStream(byteOutput)
-        AdaptiveHuffmanCompress.compress(fileData, fileData.maxOrNull() ?: 0, bitOutput)
-        bitOutput.close()
-        return byteOutput
-    }
-
-    //Option 1: Copmact the integer range
-    private fun bookCompresssion1(
-        bookVerses: List<TokenizedVerse>,
-        tokens: List<VerseStatsLexiconEntry>,
-        bookNumber: Int
-    ): ByteArray {
-        val distinctTokensInBook: Set<String> = bookVerses.flatMap { it.tokens }.distinct().toSet()
+        /*
+        Find all distinct search words in the book
+        Sort them by frequency in the book (or ... just use adative)
+        Write out their token numbers in that order, which can be used to build a new Huffman tree
+        Encode the book data using that huffman tree
+         */
+        val s= searchWordList.toSet()
+        val distinctTokensInBook: Set<String> =
+            bookVerses.flatMap { it.tokens }.distinct().filter { searchWordList.contains(it) }.toSet()
         val distinctTokensInBookSorted = tokens.filter { distinctTokensInBook.contains(it.token) }.map { it.token }
+        println("Book $bookNumber has ${distinctTokensInBookSorted.size} distinct search words")
+
+        //First write out the offsets
+        val headerData = distinctTokensInBookSorted.map { lexicon.getLookupValue(it)!! + 1 } + listOf(0)
+
+        println("Wrote ${headerData.size} header bytes")
+
         val fileData: List<Int> = bookVerses.asSequence().flatMap { verse ->
             verse.tokens.map {
                 distinctTokensInBookSorted.indexOf(it) + 1
             }.toList() + listOf(0)
         }.toList()
-        val compressedData = encodeIntegers(fileData)
+        val compressedData =encodeWithAdaptiveHuffman(fileData)
         //println("Book $bookNumber has ${bookVerses.size} verses, ${distinctTokensInBookSorted.size} distinctTokens and can be written in ${compressedData.size} bytes")
         return compressedData
     }
 
-    private fun stopwordTest(stopWordFile: List<Int>) {
-        val maxPairsToKeep = 2
-        val top = stopWordFile.zipWithNext { a, b -> a to b }.groupingBy { it }.eachCount().toList()
-            .sortedByDescending { it.second }.take(maxPairsToKeep)
+    //Option 3: Normal but with adaptive huffman
+    private fun bookCompresssion3(
+        bookVerses: List<TokenizedVerse>,
+        tokens: List<VerseStatsLexiconEntry>,
+        bookNumber: Int,
+        stopWordList: List<String>,
+        searchWordList: List<String>
+    ): ByteArray {
+        val s = searchWordList.toSet()
+        val fileData: List<Int> = bookVerses.asSequence()
+            .flatMap { verse ->
+                verse.tokens.filter { s.contains(it) }
+                    .map { token -> tokens.indexOfFirst { it.token == token } }
+                    .toList() + listOf(0)
+            }.toList()
+        val byteOutput = encodeWithAdaptiveHuffman(fileData)
+
+        return byteOutput
+    }
+
+    private fun bigramTest(codeList: List<Int>, maxPairsToKeep: Int = 128): ByteArray {
+        val top = codeList.filter { it > 0 }
+            .zipWithNext { a, b -> a to b }
+            .groupingBy { it }
+            .eachCount()
+            .toList()
+            .sortedByDescending { it.second }
+            .take(maxPairsToKeep)
         val ngrams = top.map { it.first }
         val mapped = ngrams.mapIndexed { index, pair -> pair to (index) }.toMap()
-        println(top)
 
         var i = 0
         val out = mutableListOf<Int>()
-        while (i < stopWordFile.size) {
-            val currentCode = stopWordFile[i]
-            if (i < stopWordFile.size-1) {
-                val nextCode = stopWordFile[i + 1]
+        while (i < codeList.size) {
+            val currentCode = codeList[i]
+            if (i < codeList.size - 1) {
+                val nextCode = codeList[i + 1]
                 val ng = currentCode to nextCode
-                val m = mapped[ng]
+                val m: Int? = mapped[ng]
                 if (m != null) {
                     out.add(m)
                     i++
                 } else {
-                    out.add(currentCode+maxPairsToKeep)
+                    out.add(maxPairsToKeep + currentCode)
                 }
             } else {
-                out.add(currentCode+maxPairsToKeep)
+                out.add(maxPairsToKeep + currentCode)
             }
             i++
         }
-        val compressed = encodeIntegers(out)
-        println("Using ngrams, we can get the stop word list to ${compressed.size}")
+        val ngramCodes = listOf(maxPairsToKeep) + mapped.asSequence().sortedBy { it.value }
+            .flatMap { listOf(it.key.first, it.key.second) }.toList()
+
+        val finalOutput = ngramCodes + out
+        val compressed = writeHuffmanWithTree(finalOutput)
+        val originalCompressed = writeHuffmanWithTree(codeList)
+        println("BiGram: ${maxPairsToKeep}. Original: ${codeList.size} original compressed: ${originalCompressed.size}, n-gram uncompressed: ${finalOutput.size}, n-gram compressed: ${compressed.size}. Savings: ${originalCompressed.size - compressed.size}")
+        return compressed
     }
 
     private fun testSkips(skipTries: Int, searchFile: MutableList<Int>) {
         val searchDistributions = IntArray(skipTries)
         val optimized = mutableListOf<Int>()
-        val minChars = 2
+        val minSpaces = 2
+        var skipsAdded = 0
         searchFile.forEachIndexed { index, code ->
             var skipFound = false
-            l@ for (i in minChars until (searchDistributions.size + minChars)) {
+            l@ for (i in minSpaces until (searchDistributions.size + minSpaces)) {
                 if (code > 1 && index + i < searchFile.size && searchFile[index + i] == code) {
-                    val skipCode = i - minChars
+                    skipsAdded++
+                    val skipCode = i - minSpaces
                     optimized.add(skipCode + 1)
                     searchDistributions[skipCode]++
                     skipFound = true
@@ -210,11 +264,12 @@ class Version4Writer(val stopWords: Set<String>) : BibWriter(4) {
                 }
             }
             if (!skipFound) {
-                optimized.add((searchDistributions.size - minChars) + code)
+                optimized.add((searchDistributions.size - minSpaces) + code)
             }
         }
-        val optimizedBytes = encodeIntegers(optimized)
-        println("Using ${searchDistributions.size} skips, We might be able to save ${searchDistributions.sum()}. Optimized: ${optimizedBytes.size}")
+        val originalCompressed = writeHuffmanWithTree(searchFile)
+        val optimizedBytes = writeHuffmanWithTree(optimized)
+        println("Using ${searchDistributions.size} skips (total ${skipsAdded}), we save ${originalCompressed.size - optimizedBytes.size} (end: ${optimizedBytes.size})")
     }
 
     private fun encodeBits(toggle: List<Int>): ByteArray {
@@ -228,20 +283,6 @@ class Version4Writer(val stopWords: Set<String>) : BibWriter(4) {
         }
         bitOut.close()
         return byteOut.toByteArray()
-    }
-
-    private fun encodeIntegers(tokens: List<Int>): ByteArray {
-        val tokenFreqs = IntArray((tokens.maxOrNull() ?: 0) + 1)
-        Arrays.fill(tokenFreqs, 0)
-        tokens.forEach { tokenFreqs[it]++ }
-        val byteOutput = ByteArrayOutputStream()
-        val bitOutput = BitOutputStream(byteOutput)
-        val codeTree = writeHuffmanHeader(tokenFreqs, bitOutput)
-        val encoder = HuffmanEncoder(bitOutput, codeTree)
-        tokens.forEach { encoder.write(it) }
-        encoder.out.finishByte()
-        bitOutput.close()
-        return byteOutput.toByteArray()
     }
 
     override fun writeLexicon(lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
@@ -303,7 +344,7 @@ class Version4Writer(val stopWords: Set<String>) : BibWriter(4) {
         val originalCodeTree = frequencies.buildCodeTree()
         val canonCode = CanonicalCode(originalCodeTree, frequencies.getSymbolLimit())
 
-        val headerBytes = CanonicalCodeIO.write(canonCode, bitOutput)
+        CanonicalCodeIO.write(canonCode, bitOutput)
         //println("$headerBytes header bytes written")
 
         return canonCode.toCodeTree()

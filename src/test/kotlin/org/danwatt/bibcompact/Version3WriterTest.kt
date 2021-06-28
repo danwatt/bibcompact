@@ -103,12 +103,11 @@ class Version3WriterTest {
         val byteOutput = ByteArrayOutputStream()
         val stats = vw.write(verses, byteOutput)
         byteOutput.close()
-        //155 bytes for the Lexicon, vs 159 for version 2
-        //30663 bytes for the huffman header for the text, compared to 269 for version 2
+
         assertThat(stats)
             .containsEntry("headerBytes", 1256)
-            .containsEntry("lexiconBytes", 38495)//v2: 61085
-            .containsEntry("textBytes", 1000455)//v2: 999812
+            .containsEntry("lexiconBytes", 38495)//v2: 61085, -22,589
+            .containsEntry("textBytes", 1000455)//v2: 999812, +643
             .containsEntry("tokens", 13600)
         val rawByte = byteOutput.toByteArray()
         assertThat(rawByte).hasSize(1_040_207)//8,369 bytes under 1MB!!!!!!

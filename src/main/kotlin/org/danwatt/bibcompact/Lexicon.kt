@@ -61,17 +61,17 @@ class Lexicon<T : BaseLexiconEntry>(private val tokens: List<T>) {
 
 }
 /*
-Bit distribtuon 10: 75
-Bit distribtuon 11: 137
-Bit distribtuon 12: 237
-Bit distribtuon 13: 348
-Bit distribtuon 14: 623  | 12,708
-Bit distribtuon 15: 939  | 12,085
-Bit distribtuon 16: 1305 | 11,146
-Bit distribtuon 17: 1840 | 9,841
-Bit distribtuon 18: 1723 | 8,001
-Bit distribtuon 19: 1886 | 6,278
-Bit distribtuon 20: 4392
+Bit distribution 10: 75
+Bit distribution 11: 137
+Bit distribution 12: 237
+Bit distribution 13: 348
+Bit distribution 14: 623  | 12,708
+Bit distribution 15: 939  | 12,085
+Bit distribution 16: 1305 | 11,146
+Bit distribution 17: 1840 | 9,841
+Bit distribution 18: 1723 | 8,001
+Bit distribution 19: 1886 | 6,278
+Bit distribution 20: 4392
 2^13 = 8192
 
  */
