@@ -28,7 +28,7 @@
 This project is part of
 an [ongoing investigation](https://danwatt.org/2021/04/studying-an-old-e-reader-for-fun-certainly-not-profit/)
 into a device made in 1989, a handheld Bible reader that managed to compress 4.3MB of text into less than 1MB, while
-providing for very fast searching.
+providing for fast searching.
 
 This project's goal is to determine how it might be possible to accomplish that feat using techniques that should have
 been possible with the technology of the time, while at the same time comparing the results to more modern compression
@@ -65,16 +65,16 @@ and search tools.
 | lzop -9              | 1,611,939 | 36.367% |
 | Uncompressed         | 4,432,375 | 100%    |
 
-## What we know:
+## What Is Known
 
 * Uncompressed and without any special encoding, the ASCII text of the KJV is approximately 4.3 MB.
-* The Franklin Electronics KJ-21 had 1.125 MB of memory, and had not only the text of the KJV in what appears to be a
+* The Franklin Electronics KJ-21 had 1.125 MB of memory (per the manual), and had not only the text of the KJV in a
   case-sensitive format, but also had a "file format" that enabled relative fast full-text searching
-* The KJV, along with application code and a couple small games was able to fit on a 1MB Gameboy cartridge.
+* The KJ-21 also had a built-in thesaurus and word inflection database, mapping relationships between words that had
+    similar meanings.
+* The KJV, along with application code and a couple small games, was able to fit on a 1MB Game Boy cartridge.
 * The best text compressor to date (`zpaq`) can squeeze the KJV down to about 740kb, however it is extremely memory and
   CPU intensive to compress and decompress this much text.
-* The KJ-21 also had a built-in thesaurus and word inflection database, mapping relationships between words that had
-  similar meanings.
 
 ## Design Considerations
 
@@ -97,7 +97,7 @@ and search tools.
 * It is assumed that there will always be one space between each token (word). However, punctuation tokens should not
   have a space before, only after.
 
-### Some statistics
+### Some Statistics
 
 * The KJV (OT+NT) has a total of about 790,000 words
 * If treat a word as a symbol, and we add individual instances of punctuation ( `.,:;-"?!`, etc), there are about
@@ -195,6 +195,4 @@ Some additional optimizations:
 * [Unlicensed Gameboy Bible ROM (for size comparison)](https://wowroms.com/en/roms/nintendo-gameboy/king-james-bible-usa-unl/9499.html)
     * [An analysis of the Gameboy ROM](https://toasters.rocks/king-james-bible/)
 * [Some statistics on the Bible](https://www.artbible.info/concordance/)
-
-
-
+* [Word List](https://github.com/dwyl/english-words/blob/master/words_alpha.txt)

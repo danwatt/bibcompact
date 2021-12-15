@@ -4,15 +4,11 @@ import com.googlecode.concurrenttrees.common.PrettyPrinter
 import com.googlecode.concurrenttrees.radix.ConcurrentRadixTree
 import com.googlecode.concurrenttrees.radix.node.concrete.DefaultCharArrayNodeFactory
 import com.googlecode.concurrenttrees.radix.node.util.PrettyPrintable
-import com.googlecode.concurrenttrees.radixinverted.ConcurrentInvertedRadixTree
-import com.googlecode.concurrenttrees.radixinverted.InvertedRadixTree
-import com.googlecode.concurrenttrees.radixreversed.ConcurrentReversedRadixTree
-import com.googlecode.concurrenttrees.radixreversed.ReversedRadixTree
-import com.googlecode.concurrenttrees.suffix.ConcurrentSuffixTree
-import com.googlecode.concurrenttrees.suffix.SuffixTree
 import org.assertj.core.api.Assertions.assertThat
-import org.danwatt.bibcompact.PrefixTreeWriter.Companion.POP_CODE
-import org.danwatt.bibcompact.PrefixTreeWriter.Companion.PUSH_CODE
+import org.danwatt.bibcompact.radixtree.PrefixTreeWriter.Companion.POP_CODE
+import org.danwatt.bibcompact.radixtree.PrefixTreeWriter.Companion.PUSH_CODE
+import org.danwatt.bibcompact.radixtree.PrefixTreeReader
+import org.danwatt.bibcompact.radixtree.PrefixTreeWriter
 import org.junit.Test
 import java.nio.charset.Charset
 
@@ -115,6 +111,27 @@ class PrefixTreeTests {
         )
         //@formatter:on
         readAndAssertEqual(codes, tree)
+    }
+
+    @Test
+    fun fullPeterPiper() {
+        val words = """
+            Peter Piper picked a peck of pickled peppers ;
+            A peck of pickled peppers Peter Piper picked ;
+            If Peter Piper picked a peck of pickled peppers ,
+            Where's the peck of pickled peppers Peter Piper picked ?""".trimIndent()
+            .split(" ")
+            .filter { it.isNotEmpty() }
+            .distinct()
+        val tree: ConcurrentRadixTree<Int> = buildTree(words)
+        val codes = writer.write(tree)
+        codes.forEach {
+            when {
+                it == 30 || it == 31 -> println(it)
+                it > 31 -> print(it.toChar() + " ")
+                else -> print(it.toString() + " ")
+            }
+        }
     }
 
     @Test
@@ -257,17 +274,11 @@ private fun String.toCodes(): List<Int> = this.asSequence().map { it.toInt() }.t
 
 private fun buildTree(words: List<String>): ConcurrentRadixTree<Int> {
     val distinctWords = words.distinct()
-    val t2: ConcurrentReversedRadixTree<Int> = ConcurrentReversedRadixTree(DefaultCharArrayNodeFactory())
-    distinctWords.forEach {
-        t2.put(it, it.length)
-    }
-    val codes = PrefixTreeWriter().write(t2.node)
-    val huffmanEncoded = writeHuffmanWithTree(codes)
-    println("Reverse tree can be written in ${huffmanEncoded.size} bytes")
-
     val tree: ConcurrentRadixTree<Int> = ConcurrentRadixTree(DefaultCharArrayNodeFactory())
-
     distinctWords.forEach {
+        // For test purposes, we are just going to write the length as the value
+        // In the actual implementation elsewhere in this project, the value will be a number relative to the number
+        // of bits needed to huffman encode the word
         tree.put(it, it.length)
     }
     return tree

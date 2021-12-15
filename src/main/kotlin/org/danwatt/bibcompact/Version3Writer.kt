@@ -5,6 +5,7 @@ import com.googlecode.concurrenttrees.radix.node.concrete.DefaultCharArrayNodeFa
 import org.danwatt.bibcompact.huffman.BitOutputStream
 import org.danwatt.bibcompact.huffman.CanonicalCode
 import org.danwatt.bibcompact.huffman.FrequencyTable
+import org.danwatt.bibcompact.radixtree.PrefixTreeWriter
 import java.io.ByteArrayOutputStream
 import java.util.*
 

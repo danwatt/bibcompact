@@ -3,6 +3,7 @@ package org.danwatt.bibcompact
 import org.danwatt.bibcompact.huffman.BitInputStream
 import org.danwatt.bibcompact.huffman.CanonicalCodeIO
 import org.danwatt.bibcompact.huffman.HuffmanDecoder
+import org.danwatt.bibcompact.radixtree.PrefixTreeReader
 import java.io.InputStream
 import java.util.Comparator
 

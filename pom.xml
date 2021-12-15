@@ -22,6 +22,7 @@
         <junit.version>4.13.2</junit.version>
         <kotlin.version>1.5.0</kotlin.version>
         <xz.version>1.9</xz.version>
+        <lucene-core.version>8.9.0</lucene-core.version>
     </properties>
 
     <dependencies>
@@ -45,6 +46,11 @@
             <artifactId>xz</artifactId>
             <version>${xz.version}</version>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>${lucene-core.version}</version>
         </dependency>
 
         <!-- Test -->
