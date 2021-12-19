@@ -7,36 +7,7 @@ import org.danwatt.bibcompact.radixtree.PrefixTreeReader
 import java.io.InputStream
 import java.util.Comparator
 
-open class Version3Reader(version: Int = 3) : BibReader(version) {
-    override fun readVerses(
-        input: InputStream,
-        counts: List<List<Int>>,
-        lex: Lexicon<TokenOnlyEntry>
-    ): List<Verse> {
-        val endOfVerseMarker = 0
-        val bitInput = BitInputStream(input)
-        val codeTree = CanonicalCodeIO.read(bitInput).toCodeTree()
-        val decoder = HuffmanDecoder(bitInput, codeTree)
-        var counter = 1
-        val verses = mutableListOf<Verse>()
-        for (b in counts.indices) {
-            for (c in counts[b].indices) {
-                for (v in 0 until counts[b][c]) {
-                    val tokens = mutableListOf<String>()
-                    var t = -1
-                    while (t != endOfVerseMarker) {
-                        t = decoder.read()
-                        if (t != endOfVerseMarker) {
-                            tokens.add(lex.getTokens()[t - 1].token)
-                        }
-                    }
-                    verses.add(applyEnglishLanguageFixesAndBuildVerse(tokens, b, c, v))
-                    counter++
-                }
-            }
-        }
-        return verses
-    }
+class Version4Reader : Version3Reader(4) {
 
     override fun readLexicon(inputStream: InputStream): Lexicon<TokenOnlyEntry> {
         val bitInput = BitInputStream(inputStream)

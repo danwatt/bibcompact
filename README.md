@@ -38,32 +38,36 @@ and search tools.
 
 * Version 1 : Encode all words into the lexicon, then reference the lexicon with variable-width integer lookups
 * Version 2 : Encode the lexicon using Huffman codes, then separately encode the integer lookups using Huffman codes
-* Version 3 : Encode the lexicon using a prefix tree / trie, continue encoding integer lookups using Huffman codes
+* Version 3 : Encode the lexicon using a prefix tree, continue encoding integer lookups using Huffman codes
+* Version 4 : Same as 3 but use a simpler trie structure
+* Version 5 : Starting to implement the concept of stopwords, three separate "files"
+* Version 6 : WIP: Attempt "bigrams" and "skips"
 
 ## Work in progress stats
 
-| Compression          | Bytes     | Ratio   |
-|----------------------|-----------|---------|
-| zpaq -m5             |   739,407 | 16.682% |
-| bibcompact V1 + LZMA |   819,766 | 18.494% |
-| bibcompact V4+BG+SKP |   1256 + 963466 - 10022(SKP) - 25860(BG) = 928,840 (261 saved if we adaptive huff the header) | ---- |
-| bibcompact V4 (WIP)  |   970,200 | ------- |
-| bzip2 -9             |   993,406 | 22.412% |
-| bibcompact V3 (Trie) | 1,040,206 | 23.468% |
-| lzma -9              | 1,048,408 | 23.653% |
-| 1MB Boundary, GB ROM | 1,048,576 | ------- |
-| xz -9                | 1,048,616 | 23.658% |
-| 7z -mx9              | 1,048,710 | 23.660% |
-| bibcompact V2 (HUFF) | 1,062,154 | 23.963% |
-| zstd –ultra -22      | 1,068,137 | 24.099% |
-| rar -m5              | 1,142,360 | 25.773% |
-| Memory limit of KJ21 | 1,179,648 | ------- |
-| bibcompact V1        | 1,346,800 | 30.386% | 
-| gzip -9              | 1,385,457 | 31.258% |
-| zip -9               | 1,385,595 | 31.261% |
-| lz4 -9               | 1,596,418 | 36.017% |
-| lzop -9              | 1,611,939 | 36.367% |
-| Uncompressed         | 4,432,375 | 100%    |
+| Compression                  |     Bytes | Ratio   |
+|------------------------------|----------:|---------|
+| zpaq -m5                     |   739,407 | 16.682% |
+| bibcompact V1 + LZMA         |   819,766 | 18.494% |
+| bibcompact V6 (WIP)          |   928,840 | ------- |
+| bibcompact V5 (WIP)          |   982,993 | ------- |
+| bzip2 -9                     |   993,406 | 22.412% |
+| bibcompact V4                | 1,035,385 |         |
+| bibcompact V3                | 1,040,206 | 23.468% |
+| lzma -9                      | 1,048,408 | 23.653% |
+| 1MB Boundary, GB ROM         | 1,048,576 | ------- |
+| xz -9                        | 1,048,616 | 23.658% |
+| 7z -mx9                      | 1,048,710 | 23.660% |
+| bibcompact V2                | 1,062,154 | 23.963% |
+| zstd –ultra -22              | 1,068,137 | 24.099% |
+| rar -m5                      | 1,142,360 | 25.773% |
+| KJ21 Memory limit            | 1,179,648 | ------- |
+| bibcompact V1                | 1,346,800 | 30.386% | 
+| gzip -9                      | 1,385,457 | 31.258% |
+| zip -9                       | 1,385,595 | 31.261% |
+| lz4 -9                       | 1,596,418 | 36.017% |
+| lzop -9                      | 1,611,939 | 36.367% |
+| Uncompressed                 | 4,432,375 | 100.00% |
 
 ## What Is Known
 
@@ -71,7 +75,7 @@ and search tools.
 * The Franklin Electronics KJ-21 had 1.125 MB of memory (per the manual), and had not only the text of the KJV in a
   case-sensitive format, but also had a "file format" that enabled relative fast full-text searching
 * The KJ-21 also had a built-in thesaurus and word inflection database, mapping relationships between words that had
-    similar meanings.
+  similar meanings.
 * The KJV, along with application code and a couple small games, was able to fit on a 1MB Game Boy cartridge.
 * The best text compressor to date (`zpaq`) can squeeze the KJV down to about 740kb, however it is extremely memory and
   CPU intensive to compress and decompress this much text.

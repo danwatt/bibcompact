@@ -3,7 +3,7 @@ package org.danwatt.bibcompact.trie
 import org.assertj.core.api.Assertions.assertThat
 import org.danwatt.bibcompact.BibleCsvParser
 import org.danwatt.bibcompact.VerseTokenizer
-import org.danwatt.bibcompact.Version1WriterTest.Companion.compress
+import org.danwatt.bibcompact.CompressionUtils.Companion.compress
 import org.danwatt.bibcompact.writeHuffmanWithTree
 import org.junit.Test
 import java.nio.charset.Charset

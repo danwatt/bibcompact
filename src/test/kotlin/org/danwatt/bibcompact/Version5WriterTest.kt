@@ -1,6 +1,6 @@
 package org.danwatt.bibcompact
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.*
 import org.junit.Ignore
 import org.junit.Test
 import java.io.ByteArrayOutputStream
@@ -8,24 +8,27 @@ import java.io.FileOutputStream
 import java.nio.charset.Charset
 
 @Ignore
-class Version4WriterTest {
+class Version5WriterTest {
+    val stopWords = readStopwordFile()
+    val writer = Version5Writer(stopWords)
+
     @Test
     fun kjvTest() {
-        val stopWords = readStopwordFile()
+
         val verses = BibleCsvParser().readTranslation("kjv")
-        val vw = Version4Writer(stopWords)
+
         val byteOutput = ByteArrayOutputStream()
-        val stats = vw.write(verses, byteOutput)
+        val stats = writer.write(verses, byteOutput)
         byteOutput.close()
-        Assertions.assertThat(stats)
+        assertThat(stats)
             .containsEntry("headerBytes", 1256)
-            .containsEntry("lexiconBytes", 61085)
-            .containsEntry("textBytes", 999812)
+            .containsEntry("lexiconBytes", 33952)//vs 33673 for v4
+            .containsEntry("textBytes", 947784)//vs 1000455 for v3
             .containsEntry("tokens", 13600)
         val rawByte = byteOutput.toByteArray()
-        Assertions.assertThat(rawByte).hasSize(1_062_154)//SO close to 1,048,576 (1MB) - 13,578 bytes
+        assertThat(rawByte).hasSize(982_993)
 
-        val fw = FileOutputStream("/tmp/kjv-v4.out")
+        val fw = FileOutputStream("/tmp/kjv-v5.out")
         fw.write(rawByte)
         fw.close()
     }
@@ -37,5 +40,15 @@ class Version4WriterTest {
                 .filter { line -> !line.startsWith("#") }.toSet()
         }
 
+    }
+
+    @Test
+    fun stopWordExceptionCompression() {
+        val SWM = 0
+        //In the beginning God created the heaven and the earth.
+        //X  X   SWM       SWM SWM     X   SWM    X   X   SWM  X
+        val stopWordList = listOf(1, 2, SWM, SWM, SWM, 4, SWM, 5, 6, SWM, 7)
+
+        val compressed = writer.compressStopWordListing(stopWordList)
     }
 }

@@ -1,10 +1,8 @@
 package org.danwatt.bibcompact.trie
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.danwatt.bibcompact.BibleCsvParser
 import org.danwatt.bibcompact.VerseTokenizer
-import org.danwatt.bibcompact.Version1WriterTest
 import org.junit.Test
 
 class TrieIntegrationTest {
