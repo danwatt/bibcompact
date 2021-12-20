@@ -41,7 +41,8 @@ and search tools.
 * Version 3 : Encode the lexicon using a prefix tree, continue encoding integer lookups using Huffman codes
 * Version 4 : Same as 3 but use a simpler trie structure
 * Version 5 : Starting to implement the concept of stopwords, three separate "files"
-* Version 6 : WIP: Attempt "bigrams" and "skips"
+* Version 6 : WIP: Attempt to add "bigrams" to the stop word file
+* Version 7 : WIP: Attempt to add "skips" to the search word file
 
 ## Work in progress stats
 
@@ -52,7 +53,7 @@ and search tools.
 | bibcompact V6 (WIP)          |   928,840 | ------- |
 | bibcompact V5 (WIP)          |   982,993 | ------- |
 | bzip2 -9                     |   993,406 | 22.412% |
-| bibcompact V4                | 1,035,385 |         |
+| bibcompact V4                | 1,035,391 |         |
 | bibcompact V3                | 1,040,206 | 23.468% |
 | lzma -9                      | 1,048,408 | 23.653% |
 | 1MB Boundary, GB ROM         | 1,048,576 | ------- |

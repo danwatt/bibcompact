@@ -7,9 +7,9 @@ abstract class BibWriter(val version: Int) {
         val headerByteArray = writeHeader(verses)
         val tokenizer = VerseTokenizer()
         val tokenized = verses.map { tokenizer.tokenize(it) }.toList()
-        val lexicon = Lexicon.build(tokenized)
-        val lexBytes = writeLexicon(lexicon)
-        val textBytes = writeVerseData(tokenized, lexicon)
+        val sortedLexicon = Lexicon.build(tokenized)
+        val lexBytes = writeLexicon(sortedLexicon)
+        val textBytes = writeVerseData(tokenized, sortedLexicon)
 
         out.write(this.version)
         out.write(headerByteArray)
@@ -21,7 +21,7 @@ abstract class BibWriter(val version: Int) {
             "headerBytes" to headerByteArray.size,
             "lexiconBytes" to lexBytes.size,
             "textBytes" to textBytes.size,
-            "tokens" to lexicon.getTokens().size
+            "tokens" to sortedLexicon.getTokens().size
         )
     }
 

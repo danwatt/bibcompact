@@ -32,7 +32,7 @@ class PrefixTrieReader {
         }
 
         words.add(stack.joinToString(""))
-        return words
+        return words.toSortedSet()
     }
 
     companion object {

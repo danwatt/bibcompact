@@ -24,7 +24,7 @@ open class Version3Writer(version: Int = 3) : BibWriter(version) {
     }
 
     override fun writeLexicon(lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
-        val bitMapping = buildBitMapping(lexicon)
+        val bitMapping = buildBitMapping(listOf(Integer.MAX_VALUE),lexicon.getTokens())
         val tokens: List<String> = convertLexiconToList(lexicon)
         val tree: ConcurrentRadixTree<Int> = buildPrefixTree(tokens, bitMapping)
         val prefixTree = PrefixTreeWriter().write(tree)
@@ -37,22 +37,8 @@ open class Version3Writer(version: Int = 3) : BibWriter(version) {
         return byteOutput.toByteArray()
     }
 
-    fun buildBitMapping(lexicon: Lexicon<VerseStatsLexiconEntry>): Map<String, Int> {
-        val tokens = lexicon.getTokens()
-        val tokenFreqs = IntArray(tokens.size + 1)
-        tokenFreqs[0] = Integer.MAX_VALUE
-        tokens.forEachIndexed { index, token -> tokenFreqs[index + 1] = token.totalOccurrences }
-        val frequencies = FrequencyTable(tokenFreqs)
-        val originalCodeTree = frequencies.buildCodeTree()
-        val canonCode = CanonicalCode(originalCodeTree, frequencies.getSymbolLimit())
-        val bitMapping = tokens.mapIndexed { index, token ->
-            token.token to canonCode.getCodeLength(index + 1)
-        }.toMap()
-        return bitMapping
-    }
-
     private fun convertLexiconToList(lexicon: Lexicon<VerseStatsLexiconEntry>): List<String> {
-        val bitMapping = buildBitMapping(lexicon)
+        val bitMapping = buildBitMapping(listOf(Integer.MAX_VALUE),lexicon.getTokens())
         val c: Comparator<String> = compareBy<String> { bitMapping[it] }.thenComparing { it -> it }
         return lexicon.getTokens().map { it.token }.sortedWith(c).toList()
     }
@@ -64,6 +50,28 @@ open class Version3Writer(version: Int = 3) : BibWriter(version) {
             tree.put(it, bits)
         }
         return tree
+    }
+
+    companion object {
+        fun buildBitMapping(
+            reservedAllocations: List<Int> = listOf(Integer.MAX_VALUE),
+            tokens: List<VerseStatsLexiconEntry>
+        ): Map<String, Int> {
+            val tokenFreqs = IntArray(reservedAllocations.size + tokens.size)
+            reservedAllocations.forEachIndexed { index, i ->
+                tokenFreqs[index] = i
+            }
+            tokens.forEachIndexed { index, token ->
+                tokenFreqs[index + reservedAllocations.size] = token.totalOccurrences
+            }
+            val frequencies = FrequencyTable(tokenFreqs)
+            val originalCodeTree = frequencies.buildCodeTree()
+            val canonCode = CanonicalCode(originalCodeTree, frequencies.getSymbolLimit())
+            val bitMapping = tokens.mapIndexed { index, token ->
+                token.token to canonCode.getCodeLength(index + reservedAllocations.size)
+            }.toMap()
+            return bitMapping
+        }
     }
 }
 

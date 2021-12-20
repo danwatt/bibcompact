@@ -3,8 +3,8 @@ package org.danwatt.bibcompact
 import java.io.InputStream
 import kotlin.experimental.or
 
-fun Int.toHexByte() : String = this.toString(16).padStart(2,'0')
-fun Int.toHexWord() : String = this.toString(16).padStart(4,'0')
+fun Int.toHexByte(): String = this.toString(16).padStart(2, '0')
+fun Int.toHexWord(): String = this.toString(16).padStart(4, '0')
 
 fun Int.to16bitString(): String =
     Integer.toBinaryString(this).padStart(16, '0')
@@ -22,6 +22,13 @@ fun Int.toVarByte(): List<Byte> {
 
 fun Byte.toPositiveInt() = toInt() and 0xFF
 
+fun Int.toByteArray(size: Int = 4): ByteArray =
+    ByteArray(size) { i -> (this.toLong() shr (i * 8)).toByte() }
+
+fun ByteArray.read32bitInt(offset: Int): Int = (this[offset + 3].toInt() shl 24) or
+        (this[offset + 2].toInt() and 0xff shl 16) or
+        (this[offset + 1].toInt() and 0xff shl 8) or
+        (this[offset + 0].toInt() and 0xff)
 
 fun InputStream.readVarByteInt(): Int {
     val v1 = this.read()

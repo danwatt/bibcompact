@@ -10,6 +10,12 @@ open abstract class VersionBaseTest(internal val writer: BibWriter, internal val
 
     @Test
     fun simpleTokens() {
+        val (lexicon, verse) = buildSimpleTokenTestData()
+        val bytes = writer.writeVerseData(listOf(verse), lexicon)
+        assertTokenWriting(bytes)
+    }
+
+    open fun buildSimpleTokenTestData(): Pair<Lexicon<VerseStatsLexiconEntry>, TokenizedVerse> {
         val filler = (2..127).map { VerseStatsLexiconEntry(it.toString(), it, it, 5) }
         val mostFrequent = listOf(
             VerseStatsLexiconEntry("First", 1, 1, 100),
@@ -20,12 +26,11 @@ open abstract class VersionBaseTest(internal val writer: BibWriter, internal val
             VerseStatsLexiconEntry("rare-er", 2, 2, 2),
             VerseStatsLexiconEntry("rare-est", 3, 3, 1)
         )
-        val tokens = mostFrequent + filler + rare
-        val lexicon = Lexicon(tokens)
+        val lexicon = Lexicon(mostFrequent + filler + rare)
 
-        val verse = TokenizedVerse(1, 1, 1, 1, listOf("First", "Second", "2", "3", "rare", "rare-er", "rare-est"))
-        val bytes = writer.writeVerseData(listOf(verse), lexicon)
-        assertTokenWriting(bytes)
+        val verse =
+            TokenizedVerse(1, 1, 1, 1, listOf("First", "Second", "2", "3", "rare", "rare-er", "rare-est"))
+        return lexicon to verse
     }
 
     @Test
@@ -35,15 +40,19 @@ open abstract class VersionBaseTest(internal val writer: BibWriter, internal val
         assertLexiconWrite(bytes)
     }
 
-    private fun writeSimpleLexicon(): ByteArray {
-        val lex = Lexicon.build(
+    fun writeSimpleLexicon(): ByteArray {
+        val lex = generateSampleLexiconData()
+
+        return writer.writeLexicon(lex)
+    }
+
+    open fun generateSampleLexiconData(): Lexicon<VerseStatsLexiconEntry> {
+        return Lexicon.build(
             listOf(
                 TokenizedVerse(1, 1, 1, 1, listOf("Test")),
                 TokenizedVerse(2, 2, 2, 2, listOf("value"))
             )
         )
-
-        return writer.writeLexicon(lex)
     }
 
     @Test
@@ -92,20 +101,22 @@ open abstract class VersionBaseTest(internal val writer: BibWriter, internal val
     }
 
     private fun writeSampleVerses(): Pair<Map<String, Int>, ByteArray> {
-        val verses = listOf(
-            Verse(1, 1, 1, 1, "Book 1 Chapter 1 Verse 1"),
-            Verse(2, 1, 1, 2, "Book 1 Chapter 1 Verse 2"),
-            Verse(3, 1, 1, 3, "Book 1 Chapter 1 Verse 3"),
-            Verse(4, 1, 2, 1, "Book 1 Chapter 2 Verse 1"),
-            Verse(5, 2, 1, 1, "Book 2 Chapter 1 Verse 1"),
-            Verse(6, 2, 1, 2, "Book 2 Chapter 1 Verse 2"),
-        )
+        val verses = generateSampleVerseData()
         val byteOutput = ByteArrayOutputStream()
         val stats = writer.write(verses, byteOutput)
         byteOutput.close()
         val bytes = byteOutput.toByteArray()
         return Pair(stats, bytes)
     }
+
+    open fun generateSampleVerseData() = listOf(
+        Verse(1, 1, 1, 1, "Book 1 Chapter 1 Verse 1"),
+        Verse(2, 1, 1, 2, "Book 1 Chapter 1 Verse 2"),
+        Verse(3, 1, 1, 3, "Book 1 Chapter 1 Verse 3"),
+        Verse(4, 1, 2, 1, "Book 1 Chapter 2 Verse 1"),
+        Verse(5, 2, 1, 1, "Book 2 Chapter 1 Verse 1"),
+        Verse(6, 2, 1, 2, "Book 2 Chapter 1 Verse 2"),
+    )
 
     @Test
     fun readSample() {

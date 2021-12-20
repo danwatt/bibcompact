@@ -1,9 +1,10 @@
 package org.danwatt.bibcompact
 
+import org.danwatt.bibcompact.huffman.BitInputStream
 import java.io.InputStream
 
 abstract class BibReader(val version: Int) {
-    fun read(input: InputStream): List<Verse> {
+    open fun read(input: InputStream): List<Verse> {
         val versionNumber = input.read()
         if (versionNumber != this.version) {
             throw IllegalArgumentException("Bad version number encountered, expected ${this.version} but was $versionNumber")

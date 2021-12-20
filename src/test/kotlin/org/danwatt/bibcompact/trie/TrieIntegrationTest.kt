@@ -15,9 +15,10 @@ class TrieIntegrationTest {
     fun kvjThereAndBackWithSuffixes() {
         val encoded =
             PrefixTrieWriter().write(distinctWords, listOf("s", "ed", "ing", "eth", "th", "h", "d"))
+
         val decodedList = PrefixTrieReader().read(encoded)
 
-        assertThat(decodedList).containsExactlyInAnyOrderElementsOf(distinctWords)
+        assertThat(decodedList).containsExactlyElementsOf(distinctWords)
     }
 
     @Test
@@ -25,6 +26,6 @@ class TrieIntegrationTest {
         val encoded = PrefixTrieWriter().write(distinctWords)
         val decodedList = PrefixTrieReader().read(encoded)
 
-        assertThat(decodedList).containsExactlyInAnyOrderElementsOf(distinctWords)
+        assertThat(decodedList).containsExactlyElementsOf(distinctWords)
     }
 }

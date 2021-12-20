@@ -1,8 +1,7 @@
 package org.danwatt.bibcompact
 
+import org.danwatt.bibcompact.Version3Writer.Companion.buildBitMapping
 import org.danwatt.bibcompact.huffman.BitOutputStream
-import org.danwatt.bibcompact.huffman.CanonicalCode
-import org.danwatt.bibcompact.huffman.FrequencyTable
 import org.danwatt.bibcompact.trie.PrefixTrieWriter
 import java.io.ByteArrayOutputStream
 
@@ -35,36 +34,28 @@ class Version5Writer(val stopWords: Set<String>) : BibWriter(5) {
                     }
                 }
             }
-            stopWordFile.add(END_VERSE_MARKER)
+            searchFile.add(END_VERSE_MARKER)
         }
 
-        val searchFileBytes = writeHuffmanWithTree(searchFile)
         val stopWordFileBytes = writeHuffmanWithTree(stopWordFile)
+        val searchFileBytes = writeHuffmanWithTree(searchFile)
 
-        println("Search file :${searchFileBytes.size}")
-        println("Stopword file :${stopWordFileBytes.size}")
+
+        println("Stop word file :${stopWordFileBytes.size} (${stopWordFileBytes.size.toByteArray().toHex()})")
+        println("Search file :${searchFileBytes.size} (${searchFileBytes.size.toByteArray().toHex()})")
+
         println("Total size: ${searchFileBytes.size + stopWordFileBytes.size}")
 
-        return searchFileBytes + stopWordFileBytes
+        return stopWordFileBytes.size.toByteArray() +
+                searchFileBytes.size.toByteArray() +
+                stopWordFileBytes +
+                searchFileBytes
     }
 
     private fun convertLexiconToList(tokens: List<VerseStatsLexiconEntry>): List<String> {
-        val bitMapping = buildBitMapping(tokens)
+        val bitMapping = buildBitMapping(listOf(Integer.MAX_VALUE), tokens)
         val c: Comparator<String> = compareBy<String> { bitMapping[it] }.thenComparing { it -> it }
         return tokens.map { it.token }.sortedWith(c).toList()
-    }
-
-    fun buildBitMapping(lexicon: List<VerseStatsLexiconEntry>): Map<String, Int> {
-        val tokenFreqs = IntArray(lexicon.size + 1)
-        tokenFreqs[0] = Integer.MAX_VALUE
-        lexicon.forEachIndexed { index, token -> tokenFreqs[index + 1] = token.totalOccurrences }
-        val frequencies = FrequencyTable(tokenFreqs)
-        val originalCodeTree = frequencies.buildCodeTree()
-        val canonCode = CanonicalCode(originalCodeTree, frequencies.getSymbolLimit())
-        val bitMapping = lexicon.mapIndexed { index, token ->
-            token.token to canonCode.getCodeLength(index)
-        }.toMap()
-        return bitMapping
     }
 
     private fun writeV4Lexicon(tokens: List<VerseStatsLexiconEntry>): ByteArray {
@@ -82,7 +73,7 @@ class Version5Writer(val stopWords: Set<String>) : BibWriter(5) {
         writeHuffmanWithTree(lexiconBitOutput, trieChars.map { it.code })
         lexiconBitOutput.close()
 
-        val bitMapping = buildBitMapping(tokens)
+        val bitMapping = buildBitMapping(listOf(Integer.MAX_VALUE), tokens)
         val bitAllotments = sortedLexicon.mapNotNull { bitMapping[it] }.toList()
         val wordBitMappingOutput = BitOutputStream(byteOutput)
         writeHuffmanWithTree(wordBitMappingOutput, bitAllotments)
@@ -92,10 +83,10 @@ class Version5Writer(val stopWords: Set<String>) : BibWriter(5) {
 
     override fun writeLexicon(lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
 
-        val (stop, search) = lexicon.getTokens().partition { stopWords.contains(it.token.lowercase()) }
+        val (stopTokens, searchTokens) = lexicon.getTokens().partition { stopWords.contains(it.token.lowercase()) }
 
-        val stopBytes = writeV4Lexicon(stop)
-        val searchBytes = writeV4Lexicon(search)
+        val stopBytes = writeV4Lexicon(stopTokens)
+        val searchBytes = writeV4Lexicon(searchTokens)
 
         println("Stop word lexicon is ${stopBytes.size} bytes")
         println("Search word lexicon is ${searchBytes.size} bytes")
@@ -103,8 +94,4 @@ class Version5Writer(val stopWords: Set<String>) : BibWriter(5) {
         return stopBytes + searchBytes
     }
 
-    fun compressStopWordListing(stopWordList: List<Int>): List<Int> {
-        return stopWordList
-
-    }
 }
