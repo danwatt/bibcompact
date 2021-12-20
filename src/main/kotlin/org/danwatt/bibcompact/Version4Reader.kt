@@ -28,7 +28,6 @@ C codepoints : the bit allocations of each word (canonicalized huffman)
     private fun readPrefixTree(bitInput: BitInputStream): Map<String, Int> {
         val prefixTreeCodeLength = bitInput.readBits(32)
 
-        println("Lexicon has ${prefixTreeCodeLength} huffman codes")
         val codeTree = CanonicalCodeIO.read(bitInput).toCodeTree()
         val decoder = HuffmanDecoder(bitInput, codeTree)
         val prefixTreeCodes = mutableListOf<Char>()
@@ -37,10 +36,8 @@ C codepoints : the bit allocations of each word (canonicalized huffman)
         }
         bitInput.finishByte()
         val tree = PrefixTrieReader().read(prefixTreeCodes)
-        println("Prefix tree has ${tree.size} items in it")
 
         val bitAllotmentCodeLength = bitInput.readBits(32)
-        println("Bit allotment has ${bitAllotmentCodeLength} huffman codes")
         val allotmentCodeTree = CanonicalCodeIO.read(bitInput).toCodeTree()
         val allotmentDecoder = HuffmanDecoder(bitInput, allotmentCodeTree)
         val allotments = mutableListOf<Int>()

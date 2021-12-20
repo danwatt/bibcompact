@@ -51,9 +51,9 @@ and search tools.
 | zpaq -m5                     |   739,407 | 16.682% |
 | bibcompact V1 + LZMA         |   819,766 | 18.494% |
 | bibcompact V6 (WIP)          |   928,840 | ------- |
-| bibcompact V5 (WIP)          |   982,993 | ------- |
 | bzip2 -9                     |   993,406 | 22.412% |
 | bibcompact V4                | 1,035,391 |         |
+| bibcompact V5 (WIP)          | 1,039,584 | ------- |
 | bibcompact V3                | 1,040,206 | 23.468% |
 | lzma -9                      | 1,048,408 | 23.653% |
 | 1MB Boundary, GB ROM         | 1,048,576 | ------- |

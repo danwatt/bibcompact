@@ -120,7 +120,6 @@ internal class PrefixTrieWriterTest {
         val distinctWords = tokenized.flatMap { it.tokens }.distinct()
 
         val top = topSuffixes(distinctWords)
-        println(top)
 
         val output =
             PrefixTrieWriter().write(distinctWords.toSortedSet(), listOf("s", "ed", "ing", "eth", "th", "h", "d"))

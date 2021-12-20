@@ -41,7 +41,6 @@ open class Version3Reader(version: Int = 3) : BibReader(version) {
     override fun readLexicon(inputStream: InputStream): Lexicon<TokenOnlyEntry> {
         val bitInput = BitInputStream(inputStream)
         val prefixTreeBytes = bitInput.readBits(24)
-        println("Reading ${prefixTreeBytes} bytes of prefix tree data")
         val codeTree = CanonicalCodeIO.read(bitInput).toCodeTree()
         val decoder = HuffmanDecoder(bitInput, codeTree)
         val prefixTreeCodes = mutableListOf<Int>()
@@ -60,7 +59,6 @@ open class Version3Reader(version: Int = 3) : BibReader(version) {
         val c: Comparator<String> = compareBy<String> { decoded[it] }.thenComparing { it -> it }
         val wordsSorted = decoded.keys.map { it }.sortedWith(c).toList()
 
-        println("Found ${wordsSorted.size} words in ${prefixTreeBytes}")
         return Lexicon.buildFromWordList(wordsSorted)
     }
 }

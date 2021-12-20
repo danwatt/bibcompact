@@ -20,9 +20,6 @@ class Version4Writer : Version3Writer(4) {
         writePrefixTrie(byteOutput, sortedLexicon)
         val trieSize = byteOutput.size()
         writeBitAllocations(byteOutput, lexicon, sortedLexicon)
-        val allocationSize = byteOutput.size() - trieSize
-
-        println("Trie: ${trieSize}. Allocation: ${allocationSize}. Total: ${byteOutput.size()}")
 
         return byteOutput.toByteArray()
     }

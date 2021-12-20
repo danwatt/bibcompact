@@ -22,7 +22,7 @@ fun Int.toVarByte(): List<Byte> {
 
 fun Byte.toPositiveInt() = toInt() and 0xFF
 
-fun Int.toByteArray(size: Int = 4): ByteArray =
+fun Int.to4ByteArray(size: Int = 4): ByteArray =
     ByteArray(size) { i -> (this.toLong() shr (i * 8)).toByte() }
 
 fun ByteArray.read32bitInt(offset: Int): Int = (this[offset + 3].toInt() shl 24) or

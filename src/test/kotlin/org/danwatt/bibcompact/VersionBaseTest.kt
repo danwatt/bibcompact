@@ -57,9 +57,11 @@ open abstract class VersionBaseTest(internal val writer: BibWriter, internal val
 
     @Test
     fun readSimpleLexicon() {
-        val lex = reader.readLexicon(ByteArrayInputStream(writeSimpleLexicon()))
+        val lex = readSampleLexicon()
         assertThat(lex.getTokens().map { it.token }).containsSequence("Test", "value")
     }
+
+    open fun readSampleLexicon() = reader.readLexicon(ByteArrayInputStream(writeSimpleLexicon()))
 
 
     @Test
@@ -124,12 +126,7 @@ open abstract class VersionBaseTest(internal val writer: BibWriter, internal val
         val verses = reader.read(ByteArrayInputStream(bytes))
 
         assertThat(verses).containsSequence(
-            Verse(1001001, 1, 1, 1, "Book 1 Chapter 1 Verse 1"),
-            Verse(1001002, 1, 1, 2, "Book 1 Chapter 1 Verse 2"),
-            Verse(1001003, 1, 1, 3, "Book 1 Chapter 1 Verse 3"),
-            Verse(1002001, 1, 2, 1, "Book 1 Chapter 2 Verse 1"),
-            Verse(2001001, 2, 1, 1, "Book 2 Chapter 1 Verse 1"),
-            Verse(2001002, 2, 1, 2, "Book 2 Chapter 1 Verse 2")
+            generateSampleVerseData()
         )
     }
 

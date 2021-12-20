@@ -47,7 +47,6 @@ object CanonicalCodeIO {
         val codeBits = input.readBits(8)
         var codeOffset = 0
         val codes = IntArray(numCodes)
-        println("Reading ${numCodes} codes")
         while (codeOffset < numCodes) {
             when (input.readBit()) {
                 1 -> codes[codeOffset++] = input.readBits(codeBits)

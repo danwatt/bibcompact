@@ -18,7 +18,6 @@ class HuffmanDecoder(val input: BitInputStream, var codeTree: CodeTree) {
      * @throws EOFException if the end of stream was reached before a symbol was decoded
      * @throws NullPointerException if the current code tree is `null`
      */
-    @Throws(IOException::class)
     fun read(): Int {
         var currentNode = codeTree.root
         while (true) {
@@ -32,6 +31,23 @@ class HuffmanDecoder(val input: BitInputStream, var codeTree: CodeTree) {
                     is Leaf -> return nextNode.symbol
                     is InternalNode -> nextNode
                 }
+        }
+    }
+
+    fun readAll(): List<Int> {
+        val list = mutableListOf<Int>()
+        var currentNode = codeTree.root
+        while (true) {
+            val nextNode: Node = when (input.readBit()) {
+                0 -> currentNode.left
+                1 -> currentNode.right
+                else -> return list
+            }
+            if (nextNode is Leaf) {
+                list.add(nextNode.symbol)
+            } else {
+                currentNode = nextNode as InternalNode
+            }
         }
     }
 }
