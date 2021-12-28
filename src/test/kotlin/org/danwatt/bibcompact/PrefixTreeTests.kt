@@ -218,7 +218,7 @@ class PrefixTreeTests {
         readAndAssertEqual(codes, tree)
 
         assertThat(codes).hasSize(65988)
-        assertThat(huffmanEncoded).hasSize(39011)
+        assertThat(huffmanEncoded).hasSize(38898)
 
         /*
         Lower case:
@@ -264,7 +264,7 @@ class PrefixTreeTests {
         readAndAssertEqual(codes, tree)
 
         assertThat(codes).hasSize(265114)
-        assertThat(huffmanEncoded).hasSize(153216)//If we omitted the value, it would be a whole lot less
+        assertThat(huffmanEncoded).hasSize(153146)//If we omitted the value, it would be a whole lot less
 
 
     }

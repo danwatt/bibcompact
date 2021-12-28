@@ -44,31 +44,50 @@ and search tools.
 * Version 6 : WIP: Attempt to add "bigrams" to the stop word file
 * Version 7 : WIP: Attempt to add "skips" to the search word file
 
+### Version 5
+
+Version 5, with separate files for stop words and search words, starts to immitate the "filesystem" of the KJ-21. There
+are two approaches here that could be used:
+
+1) Use two files - one for codes for stop words, one for codes for search words. The stop word file would need two "
+   reserved"
+   codes. `0` to indicate a placeholder for a search word, and `1` for an end of verse marker
+2) Use three files - one that is a bit mapping to indicate if the current word is in the stop or search file. One of the
+   files would need to reserve `0` as a placeholder code for an end of verse. With 948,192 total symbols, the bitmap
+   file would be 118,524 bytes
+
+| Approach | Bitmap   | Stop     | Search  |     Total |
+|----------|----------|----------|---------|----------:|
+| 1        | 0        | 545,716  | 458,645 | 1,004,361 | 
+| 2        | 118,524  | 416,826  | 458,645 |   993,995 |
+| 2x       | 118,524  | 427,187  | 458,645 |       ... |
+| Delta    | +118,524 | -128,890 | 0       |   -10,366 |
+
 ## Work in progress stats
 
-| Compression                  |     Bytes | Ratio   |
-|------------------------------|----------:|---------|
-| zpaq -m5                     |   739,407 | 16.682% |
-| bibcompact V1 + LZMA         |   819,766 | 18.494% |
-| bibcompact V6 (WIP)          |   928,840 | ------- |
-| bzip2 -9                     |   993,406 | 22.412% |
-| bibcompact V4                | 1,035,391 |         |
-| bibcompact V5 (WIP)          | 1,039,584 | ------- |
-| bibcompact V3                | 1,040,206 | 23.468% |
-| lzma -9                      | 1,048,408 | 23.653% |
-| 1MB Boundary, GB ROM         | 1,048,576 | ------- |
-| xz -9                        | 1,048,616 | 23.658% |
-| 7z -mx9                      | 1,048,710 | 23.660% |
-| bibcompact V2                | 1,062,154 | 23.963% |
-| zstd –ultra -22              | 1,068,137 | 24.099% |
-| rar -m5                      | 1,142,360 | 25.773% |
-| KJ21 Memory limit            | 1,179,648 | ------- |
-| bibcompact V1                | 1,346,800 | 30.386% | 
-| gzip -9                      | 1,385,457 | 31.258% |
-| zip -9                       | 1,385,595 | 31.261% |
-| lz4 -9                       | 1,596,418 | 36.017% |
-| lzop -9                      | 1,611,939 | 36.367% |
-| Uncompressed                 | 4,432,375 | 100.00% |
+| Compression          |     Bytes | Ratio   |
+|----------------------|----------:|---------|
+| zpaq -m5             |   739,407 | 16.682% |
+| bibcompact V1 + LZMA |   819,766 | 18.494% |
+| bibcompact V6 (WIP)  |   928,840 | ------- |
+| bzip2 -9             |   993,406 | 22.412% |
+| bibcompact V4        | 1,034,697 |         |
+| bibcompact V5        | 1,039,171 | ------- |
+| bibcompact V3        | 1,039,592 | 23.468% |
+| lzma -9              | 1,048,408 | 23.653% |
+| 1MB Boundary, GB ROM | 1,048,576 | ------- |
+| xz -9                | 1,048,616 | 23.658% |
+| 7z -mx9              | 1,048,710 | 23.660% |
+| bibcompact V2        | 1,061,927 | 23.963% |
+| zstd –ultra -22      | 1,068,137 | 24.099% |
+| rar -m5              | 1,142,360 | 25.773% |
+| KJ21 Memory limit    | 1,179,648 | ------- |
+| bibcompact V1        | 1,346,800 | 30.386% | 
+| gzip -9              | 1,385,457 | 31.258% |
+| zip -9               | 1,385,595 | 31.261% |
+| lz4 -9               | 1,596,418 | 36.017% |
+| lzop -9              | 1,611,939 | 36.367% |
+| Uncompressed         | 4,432,375 | 100.00% |
 
 ## What Is Known
 
@@ -201,3 +220,12 @@ Some additional optimizations:
     * [An analysis of the Gameboy ROM](https://toasters.rocks/king-james-bible/)
 * [Some statistics on the Bible](https://www.artbible.info/concordance/)
 * [Word List](https://github.com/dwyl/english-words/blob/master/words_alpha.txt)
+
+Portions of the [Reference Huffman coding library](https://github.com/nayuki/Reference-Huffman-coding) were used and converted to Kotlin
+TODO: Add licensing references
+
+## Ideas to consider
+* RLE compression could be improved, especially for the canonical code
+* For words that appear only one or two times - is there a better way to store those? Special code + resuse an existing code? As it currently stands,
+  the codes for some of these words take 19 bits
+* Something about the canonical code sorting is off. The number of bits should not oscilate. https://en.wikipedia.org/wiki/Canonical_Huffman_code

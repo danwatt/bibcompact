@@ -58,11 +58,11 @@ class Version5Test : VersionBaseTest(Version5Writer(readStopwordFile()), Version
     /* Assertions */
 
     override fun assertTokenWriting(bytes: ByteArray) {
-        assertThat(bytes.toHex()).isEqualTo("070000000f0000000004039bba2e0c008303bb82cdc026e02f77404e5dc0")
+        assertThat(bytes.toHex()).isEqualTo("02000000060000000e000000cf80000302da8070008302fe167c04f817ff004e5dc0")
     }
 
     override fun assertLexiconWrite(bytes: ByteArray) {
-        assertThat(bytes.toHex()).isEqualTo("00000014008104818e7385274800e9001d27005480f1a37b0761610400000000000000001e00810680038d009d1a002e2c081121c08b0e2c081160458003890e2c58008840b151ae6451918ca3f573ef637d4000000002000301ecc0")
+        assertThat(bytes.toHex()).isEqualTo("00000014008103831ddc65e400f20079700aa0f1a37b0761610400000000000000001e008103801f413ba017b11971b7b11b1b003cbdd80450b151ae6451918ca3f573ef637d4000000002000201f0c0")
     }
 
     override fun assertHeader(headerBytes: ByteArray) {
@@ -76,26 +76,26 @@ class Version5Test : VersionBaseTest(Version5Writer(readStopwordFile()), Version
     override fun assertFullSimpleWrite(stats: Map<String, Int>, byteOutput: ByteArray) {
         assertThat(stats)
             .containsEntry("headerBytes", 6)
-            .containsEntry("lexiconBytes", 139)
-            .containsEntry("textBytes", 44)
+            .containsEntry("lexiconBytes", 115)
+            .containsEntry("textBytes", 45)
             .containsEntry("tokens", 11)
 
         //
         assertThat(byteOutput.toHex()).isEqualTo(
             "05" + //Version number
                     "020201030102" +//Book/Chapter/Verse header
-                    "000000230081068116346805c8b0204401458712000e2c481022c489001508b1d89ef07c46210c6f515efea3ec4fa9b000000005000501abc0c00000002c00810681120408d0204680288c02800d8d1a004634004c681022c3811a1c581160408b122c08802800a860942caf9fd0a2a8a2acb86e5ba6eddf1b787ed508dfd1120000000006000501abc078" +//Lexicon
-                    "1100000013000000000705862965900403f01e80e80c80d80800060494e9494848c246e48de9761e8c3d1b80"//Text
+                    "000000230081038dee82e6c4600b6f2007b911b9900aa0b1d89ef07c46210c6f515efea3ec4fa9b000000005000401afc00000002c0081038c88e88e814700a01bdd011e804f446dc75ec6c46e6c600a0156942caf9fd0a2a8a2acb86e5ba6eddf1b787ed508dfd1120000000006000401af78" +//Lexicon
+                    "060000000900000012000000fcfcfcfcfcfc0006039ccbbbf73228000603abccaa48c246e48de9761e8c3d1b80"//Text
         )
     }
 
     override fun assertKjvWriteStats(stats: Map<String, Int>, rawByte: ByteArray) {
         assertThat(stats)
             .containsEntry("headerBytes", 1256)
-            .containsEntry("lexiconBytes", 33958)//vs 33673 for v4
-            .containsEntry("textBytes", 1004369)//vs 1000455 for v3
+            .containsEntry("lexiconBytes", 33732)//vs 33673 for v4
+            .containsEntry("textBytes", 1004182)//vs 1000455 for v3
             .containsEntry("tokens", 13600)
-        assertThat(rawByte).hasSize(1_039_584)
+        assertThat(rawByte).hasSize(1_039_171)
     }
 
     companion object {

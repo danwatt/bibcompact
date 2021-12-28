@@ -4,6 +4,7 @@ import org.danwatt.bibcompact.huffman.BitInputStream
 import org.danwatt.bibcompact.huffman.CanonicalCodeIO
 import org.danwatt.bibcompact.huffman.HuffmanDecoder
 import org.danwatt.bibcompact.trie.PrefixTrieReader
+import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.lang.Exception
 import java.util.Comparator
@@ -39,12 +40,17 @@ The stop word file has placeholders for search words
     ): List<Verse> {
 
         val inputAsByteArray = input.readBytes()
-        val stopWordFileLength = inputAsByteArray.read32bitInt(0)
-        val searchWordFileLength = inputAsByteArray.read32bitInt(4)
+        val bitMappingFileLength = inputAsByteArray.read32bitInt(0)
+        val stopWordFileLength = inputAsByteArray.read32bitInt(4)
+        val searchWordFileLength = inputAsByteArray.read32bitInt(8)
 
-        val endOfStopWordFile = stopWordFileLength + 8
-        val stopWordFile = inputAsByteArray.copyOfRange(8, endOfStopWordFile)
+        val endOfBitMappingFile = 12 + bitMappingFileLength
+        val endOfStopWordFile = endOfBitMappingFile + stopWordFileLength
+        val bitMappingFile = inputAsByteArray.copyOfRange(12, endOfBitMappingFile)
+        val stopWordFile = inputAsByteArray.copyOfRange(endOfBitMappingFile, endOfStopWordFile)
         val searchWordFile = inputAsByteArray.copyOfRange(endOfStopWordFile, endOfStopWordFile + searchWordFileLength)
+
+        val bitInput = BitInputStream(ByteArrayInputStream(bitMappingFile))
 
         /* Read the stop word file. Note that it does NOT have verse markers */
         val stopWordTokens = decodeFile(stopWordFile)
@@ -57,23 +63,30 @@ The stop word file has placeholders for search words
         var currentStopWord = 0
         var currentSearchWord = 0
 
-        val searchWordMarker = 0
-        val endOfVerseMarker = 1
+        val endOfVerseMarker = 0
 
         val verses = mutableListOf<Verse>()
         for (b in counts.indices) {
             for (c in counts[b].indices) {
                 for (v in 0 until counts[b][c]) {
                     val tokens = mutableListOf<String>()
+                    //We will always end on a stop word, as the final code should be an EOV marker
                     while (currentStopWord < stopWordTokens.size) {
-                        val stopWordToken = stopWordTokens[currentStopWord++]
-                        if (stopWordToken == endOfVerseMarker) {
-                            break
-                        } else if (stopWordToken == searchWordMarker) {
-                            val searchWordToken = searchWordTokens[currentSearchWord++]
-                            tokens.add(searchWordLexicon.getTokens()[searchWordToken].token)
-                        } else {
-                            tokens.add(stopWordLexicon.getTokens()[stopWordToken - 2].token)
+                        when (val bit = bitInput.readBit()) {
+                            0 -> {//We have a stop word / EOV marker
+                                val stopWordToken = stopWordTokens[currentStopWord++]
+                                if (stopWordToken == endOfVerseMarker) {
+                                    break
+                                }
+                                tokens.add(stopWordLexicon.getTokens()[stopWordToken - 1].token)
+                            }
+                            1 -> {
+                                val searchWordToken = searchWordTokens[currentSearchWord++]
+                                tokens.add(searchWordLexicon.getTokens()[searchWordToken].token)
+                            }
+                            else -> {
+                                throw IllegalArgumentException("Unknown bit: $bit")
+                            }
                         }
                     }
                     verses.add(applyEnglishLanguageFixesAndBuildVerse(tokens, b, c, v))

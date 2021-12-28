@@ -90,7 +90,7 @@ internal class PrefixTrieWriterTest {
         assertThat(distinctWords).hasSize(13_600)
         assertThat(distinctWords.joinToString(" ")).hasSize(109_032)
         assertThat(output).hasSize(51_703)
-        assertThat(huff).hasSize(30_630)
+        assertThat(huff).hasSize(30_527)
         assertThat(compress("LZMA", output.map { it.code.toByte() }.toByteArray())).hasSize(24_593)
     }
 
@@ -107,7 +107,7 @@ internal class PrefixTrieWriterTest {
         assertThat(distinctWords).hasSize(12_606)
         assertThat(distinctWords.joinToString(" ")).hasSize(102_300)
         assertThat(output).hasSize(47_030)
-        assertThat(huff).hasSize(27_469)
+        assertThat(huff).hasSize(27_423)
         assertThat(compress("LZMA", output.map { it.code.toByte() }.toByteArray())).hasSize(22_479)
     }
 
@@ -127,7 +127,7 @@ internal class PrefixTrieWriterTest {
         assertThat(distinctWords).hasSize(13_600)
         assertThat(distinctWords.joinToString(" ")).hasSize(109_032)
         assertThat(output).hasSize(45_762)
-        assertThat(huff).hasSize(28_628)
+        assertThat(huff).hasSize(28_460)
         assertThat(compress("LZMA", output.map { it.code.toByte() }.toByteArray())).hasSize(24_223)
     }
 
@@ -201,7 +201,7 @@ internal class PrefixTrieWriterTest {
         assertThat(originalSize).isEqualTo(484_578)
         assertThat(output).hasSize(201_749)
         val huff = huff(output)
-        assertThat(huff).hasSize(115_837)
+        assertThat(huff).hasSize(115_778)
         assertThat(compress("LZMA", output.map { it.code.toByte() }.toByteArray())).hasSize(76_411)
     }
 
@@ -221,7 +221,7 @@ internal class PrefixTrieWriterTest {
         assertThat(originalSize).isEqualTo(3_494_697)
         assertThat(output).hasSize(1_397_916)
         val huff = huff(output)
-        assertThat(huff).hasSize(816_634)
+        assertThat(huff).hasSize(816_549)
         assertThat(compress("LZMA", output.map { it.code.toByte() }.toByteArray())).hasSize(542_572)
         assertThat(compress("LZMA", lines.joinToString("\n").toByteArray())).hasSize(886_593)
     }
@@ -255,7 +255,7 @@ internal class PrefixTrieWriterTest {
         assertThat(originalSize).isEqualTo(3_494_697)
         assertThat(output).hasSize(1_380_788)
         val huff = huff(output)
-        assertThat(huff).hasSize(811_549)
+        assertThat(huff).hasSize(811_463)
         assertThat(compress("LZMA", output.map { it.code.toByte() }.toByteArray())).hasSize(542_276)
     }
 
@@ -281,44 +281,44 @@ internal class PrefixTrieWriterTest {
         val writer = PrefixTrieWriter()
         var out = writer.write(lines)
         assertThat(out).hasSize(201_749)
-        assertThat(huff(out)).hasSize(115_837)
+        assertThat(huff(out)).hasSize(115_778)
 
         out = writer.write(lines, listOf("s"))
         assertThat(out).hasSize(184_544)
-        assertThat(huff(out)).hasSize(108_900)
+        assertThat(huff(out)).hasSize(108_838)
 
         out = writer.write(lines, listOf("s", "d"))
         assertThat(out).hasSize(181_929)
-        assertThat(huff(out)).hasSize(108_429)
+        assertThat(huff(out)).hasSize(108_361)
 
 
         out = writer.write(lines, listOf("s", "ed"))
         assertThat(out).hasSize(178_356)
-        assertThat(huff(out)).hasSize(106_644)
+        assertThat(huff(out)).hasSize(106_575)
 
         out = writer.write(lines, listOf("s", "ed", "ing"))
         assertThat(out).hasSize(170_573)
-        assertThat(huff(out)).hasSize(102_741)
+        assertThat(huff(out)).hasSize(102_671)
 
         out = writer.write(lines, listOf("s", "ed", "ing", "d"))
         assertThat(out).hasSize(168_259)
-        assertThat(huff(out)).hasSize(102_408)
+        assertThat(huff(out)).hasSize(102_315)
 
         out = writer.write(lines, listOf("s", "ed", "ing", "es"))
         assertThat(out).hasSize(169_495)
-        assertThat(huff(out)).hasSize(102_565)
+        assertThat(huff(out)).hasSize(102_481)
 
         out = writer.write(lines, listOf("s", "ed", "ing", "es", "ly", "er", "rs"))
         assertThat(out).hasSize(164_069)
-        assertThat(huff(out)).hasSize(100_908)
+        assertThat(huff(out)).hasSize(100_723)
 
         out = writer.write(lines, listOf("s", "ed", "ng", "ing", "es", "ly", "er"))
         assertThat(out).hasSize(164_461)
-        assertThat(huff(out)).hasSize(100_822)
+        assertThat(huff(out)).hasSize(100_635)
 
         out = writer.write(lines, listOf("s", "ed", "ng", "ing", "d", "ly", "er"))
         assertThat(out).hasSize(163_322)
-        assertThat(huff(out)).hasSize(100_572)
+        assertThat(huff(out)).hasSize(100_398)
     }
 
     private fun topSuffixes(allWords: Collection<String>): List<Pair<String, Int>> {

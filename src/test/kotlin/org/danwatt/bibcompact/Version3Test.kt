@@ -4,11 +4,11 @@ import org.assertj.core.api.Assertions.*
 
 class Version3Test : VersionBaseTest(Version3Writer(), Version3Reader()) {
     override fun assertTokenWriting(bytes: ByteArray) {
-        assertThat(bytes.toHex()).isEqualTo("008403bbb82cdc026e02f77629cbb8")
+        assertThat(bytes.toHex()).isEqualTo("008402ffc2cf809f02fff029cbb8")
     }
 
     override fun assertLexiconWrite(bytes: ByteArray) {
-        assertThat(bytes.toHex()).isEqualTo("00000b00770484270285200ba42109c00b38016603e2e0dea900")
+        assertThat(bytes.toHex()).isEqualTo("00000b0077038b828e402f2222e00b7005b018e2e0dea900")
     }
 
     override fun assertHeader(headerBytes: ByteArray) {
@@ -23,18 +23,18 @@ class Version3Test : VersionBaseTest(Version3Writer(), Version3Reader()) {
         assertThat(byteOutput.toHex()).isEqualTo(
             "03" + //Version number
                     "020201030102" +//Book/Chapter/Verse header
-                    "000019007505800524700ae501400d96580232c00996001470412c104b000a39608e4900b45c60652f0d779fa2c6cb930" +//Lexicon
-                    "00007049ca74a4e40c252612f4c25f987a9372526e4bd00"//Text
+                    "00001900750388cb816680a01bbb011d804ec00ae2362360057b1798b45c60652f0d779fa2c6cb930" +//Lexicon
+                    "0000703babccba0c252612f4c25f987a9372526e4bd00"//Text
         )
     }
 
     override fun assertKjvWriteStats(stats: Map<String, Int>, rawByte: ByteArray) {
         assertThat(stats)
             .containsEntry("headerBytes", 1256)
-            .containsEntry("lexiconBytes", 38495)//v2: 61085, -22,589
-            .containsEntry("textBytes", 1000455)//v2: 999812, +643
+            .containsEntry("lexiconBytes", 38394)//v2: 61085, -22,589
+            .containsEntry("textBytes", 999941)//v2: 999812, +643
             .containsEntry("tokens", 13600)
-        assertThat(rawByte).hasSize(1_040_207)//8,369 bytes under 1MB!!!!!!
+        assertThat(rawByte).hasSize(1_039_592)//less than 1MB!!!!!!
     }
 
 }

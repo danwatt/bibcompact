@@ -29,7 +29,7 @@ class Version4Writer : Version3Writer(4) {
         lexicon: Lexicon<VerseStatsLexiconEntry>,
         sortedLexicon: Collection<String>
     ) {
-        val bitMapping = buildBitMapping(listOf(Integer.MAX_VALUE), lexicon.getTokens())
+        val bitMapping = buildCodeLengthMapping(lexicon.getTokens())
         val bitAllotments = sortedLexicon.mapNotNull { bitMapping[it] }.toList()
         val wordBitMappingOutput = BitOutputStream(byteOutput)
         wordBitMappingOutput.writeBits(bitAllotments.size, 32)

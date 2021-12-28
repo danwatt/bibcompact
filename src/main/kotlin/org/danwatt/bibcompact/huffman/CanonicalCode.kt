@@ -66,25 +66,25 @@ class CanonicalCode {
      *  * [1, 1, 1]
      *  * [1, 1, 2, 2, 3, 3, 3, 3]
      *
-     * @param codeLens array of symbol code lengths
+     * @param codeLengths array of symbol code lengths
      * @throws NullPointerException if the array is `null`
      * @throws IllegalArgumentException if the array length is less than 2, any element is negative,
      * or the collection of code lengths would yield an under-full or over-full Huffman code tree
      */
-    constructor(codeLens: IntArray) {
-        require(codeLens.size >= 2) { "At least 2 symbols needed" }
-        for (cl in codeLens) {
+    constructor(codeLengths: IntArray) {
+        require(codeLengths.size >= 2) { "At least 2 symbols needed" }
+        for (cl in codeLengths) {
             require(cl >= 0) { "Illegal code length" }
         }
 
         // Copy once and check for tree validity
-        codeLengths = codeLens.clone()
-        Arrays.sort(codeLengths)
-        var currentLevel = codeLengths[codeLengths.size - 1]
+        this.codeLengths = codeLengths.clone()
+        Arrays.sort(this.codeLengths)
+        var currentLevel = this.codeLengths[this.codeLengths.size - 1]
         var numNodesAtLevel = 0
-        var i = codeLengths.size - 1
-        while (i >= 0 && codeLengths[i] > 0) {
-            val cl = codeLengths[i]
+        var i = this.codeLengths.size - 1
+        while (i >= 0 && this.codeLengths[i] > 0) {
+            val cl = this.codeLengths[i]
             while (cl < currentLevel) {
                 require(numNodesAtLevel % 2 == 0) { "Under-full Huffman code tree" }
                 numNodesAtLevel /= 2
@@ -102,7 +102,7 @@ class CanonicalCode {
         require(numNodesAtLevel <= 1) { "Over-full Huffman code tree" }
 
         // Copy again
-        System.arraycopy(codeLens, 0, codeLengths, 0, codeLens.size)
+        System.arraycopy(codeLengths, 0, this.codeLengths, 0, codeLengths.size)
     }
 
     /**

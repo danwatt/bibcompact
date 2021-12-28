@@ -3,7 +3,6 @@ package org.danwatt.bibcompact
 import com.googlecode.concurrenttrees.radix.ConcurrentRadixTree
 import com.googlecode.concurrenttrees.radix.node.concrete.DefaultCharArrayNodeFactory
 import org.danwatt.bibcompact.huffman.BitOutputStream
-import org.danwatt.bibcompact.huffman.CanonicalCode
 import org.danwatt.bibcompact.huffman.FrequencyTable
 import org.danwatt.bibcompact.radixtree.PrefixTreeWriter
 import java.io.ByteArrayOutputStream
@@ -24,7 +23,7 @@ open class Version3Writer(version: Int = 3) : BibWriter(version) {
     }
 
     override fun writeLexicon(lexicon: Lexicon<VerseStatsLexiconEntry>): ByteArray {
-        val bitMapping = buildBitMapping(listOf(Integer.MAX_VALUE),lexicon.getTokens())
+        val bitMapping = buildCodeLengthMapping(lexicon.getTokens())
         val tokens: List<String> = convertLexiconToList(lexicon)
         val tree: ConcurrentRadixTree<Int> = buildPrefixTree(tokens, bitMapping)
         val prefixTree = PrefixTreeWriter().write(tree)
@@ -38,7 +37,7 @@ open class Version3Writer(version: Int = 3) : BibWriter(version) {
     }
 
     private fun convertLexiconToList(lexicon: Lexicon<VerseStatsLexiconEntry>): List<String> {
-        val bitMapping = buildBitMapping(listOf(Integer.MAX_VALUE),lexicon.getTokens())
+        val bitMapping = buildCodeLengthMapping(lexicon.getTokens())
         val c: Comparator<String> = compareBy<String> { bitMapping[it] }.thenComparing { it -> it }
         return lexicon.getTokens().map { it.token }.sortedWith(c).toList()
     }
@@ -53,24 +52,17 @@ open class Version3Writer(version: Int = 3) : BibWriter(version) {
     }
 
     companion object {
-        fun buildBitMapping(
-            reservedAllocations: List<Int> = listOf(Integer.MAX_VALUE),
+        fun buildCodeLengthMapping(
             tokens: List<VerseStatsLexiconEntry>
         ): Map<String, Int> {
-            val tokenFreqs = IntArray(reservedAllocations.size + tokens.size)
-            reservedAllocations.forEachIndexed { index, i ->
-                tokenFreqs[index] = i
-            }
+            val tokenFreqs = IntArray(tokens.size)
             tokens.forEachIndexed { index, token ->
-                tokenFreqs[index + reservedAllocations.size] = token.totalOccurrences
+                tokenFreqs[index] = token.totalOccurrences
             }
-            val frequencies = FrequencyTable(tokenFreqs)
-            val originalCodeTree = frequencies.buildCodeTree()
-            val canonCode = CanonicalCode(originalCodeTree, frequencies.getSymbolLimit())
-            val bitMapping = tokens.mapIndexed { index, token ->
-                token.token to canonCode.getCodeLength(index + reservedAllocations.size)
+            val originalCodeTree = FrequencyTable(tokenFreqs).buildCodeTree()
+            return tokens.mapIndexed { index, token ->
+                token.token to originalCodeTree.getCode(index).size
             }.toMap()
-            return bitMapping
         }
     }
 }
