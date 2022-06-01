@@ -143,6 +143,19 @@ class StatsTest {
         }
         println("$bytesNeeded bytes are needed for bit mapping")
 
+        val fourTimes: Map<String, Int> = counts.filterValues { it == 4 }
+        val thrice: Map<String, Int> = counts.filterValues { it == 3 }
+        val twice: Map<String, Int> = counts.filterValues { it == 2 }
+        val once: Map<String, Int> = counts.filterValues { it == 1 }
+
+        assertThat(fourTimes).hasSize(670)
+        assertThat(thrice).hasSize(1053)
+        assertThat(twice).hasSize(1885)
+        assertThat(once).hasSize(4393)
+        //7,331 words
+        //code points: 4393 + 3770 + 3159 = 11,322
+        //Averaging 18-19 bits each : 209,457 bits = 26,182 bytes
+        //Encoded as 13 bits: 18,398 bytes. Plus 4?
 
     }
 
@@ -165,7 +178,6 @@ class StatsTest {
             println("Translation $trans has ${tokens[0]} distinct tokens, ${tokens[1]} total, ${tokens[2]} just once, ${tokens[3]} case-insensitive")
         }
     }
-
 
 
     @Test

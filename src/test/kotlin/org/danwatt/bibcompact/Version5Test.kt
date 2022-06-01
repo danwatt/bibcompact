@@ -99,7 +99,7 @@ class Version5Test : VersionBaseTest(Version5Writer(readStopwordFile()), Version
     }
 
     companion object {
-        private fun readStopwordFile(): Set<String> {
+        fun readStopwordFile(): Set<String> {
             val stream = BibleCsvParser::class.java.getResourceAsStream("/stopwords_kjv.txt")
             stream.bufferedReader(Charset.forName("UTF-8")).use {
                 return it.readLines().asSequence()

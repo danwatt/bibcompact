@@ -206,6 +206,27 @@ internal class PrefixTrieWriterTest {
     }
 
     @Test
+    fun worlde() {
+        val lines = PrefixTrieWriter::class.java.getResourceAsStream("/en_words.txt")
+            .bufferedReader(Charset.forName("UTF-8"))
+            .use { it.readLines() }
+            .filter { it.length == 5 }
+            .distinct()
+            .map { it.lowercase() }
+            .toSortedSet()
+
+        val originalSize = lines.joinToString("").length
+
+        val output = PrefixTrieWriter().write(lines)
+
+        assertThat(lines).hasSize(4_266)
+        assertThat(originalSize).isEqualTo(21_330)
+        assertThat(output).hasSize(13_669)
+        assertThat(huff(output)).hasSize(7_433)
+        assertThat(compress("LZMA", output.map { it.code.toByte() }.toByteArray())).hasSize(6_301)
+    }
+
+    @Test
     fun bigWordList() {
         val lines = PrefixTrieWriter::class.java.getResourceAsStream("/words_alpha.txt")
             .bufferedReader(Charset.forName("UTF-8"))

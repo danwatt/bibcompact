@@ -97,8 +97,11 @@ class Version5Writer(val stopWords: Set<String>) : BibWriter(5) {
         if (lexicon.isEmpty()) {
             wordBitMappingOutput.writeBits(0, 32)
         } else {
-            val bitMapping = buildCodeLengthMapping(lexicon)
+            val bitMapping: Map<String, Int> = buildCodeLengthMapping(lexicon)
             val bitAllotments = sortedLexicon.mapNotNull { bitMapping[it] }.toList()
+            sortedLexicon.filter { str -> bitMapping[str]!! > 18 }.forEach { str ->
+                println("$str needs ${bitMapping[str]} bits")
+            }
             wordBitMappingOutput.writeBits(bitAllotments.size, 32)
             writeHuffmanWithTree(wordBitMappingOutput, bitAllotments)
         }
